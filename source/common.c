@@ -19,3 +19,5 @@ void init_bar_calc(
     mpz_init_set_str(result->current, cur, 10);
 }
 
+
+
