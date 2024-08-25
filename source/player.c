@@ -2,6 +2,7 @@
 
 #include "class.c"
 #include "promotion.c"
+#include "common.c"
 
 typedef struct {
     rpg_class_t class;
