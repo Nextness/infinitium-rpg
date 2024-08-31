@@ -21,14 +21,15 @@ typedef struct {
 #define GET_SH(game_state) (game_state)->ui_config.screen_height
 #define GET_SW(game_state) (game_state)->ui_config.screen_width
 
-void rpg_beging_ui_context(/*Camera2D camera*/void) {
+void rpg_beging_ui_context(Camera3D camera3d) {
     BeginDrawing();
     ClearBackground(RAYWHITE);
+    BeginMode3D(camera3d);
     // BeginMode2D(camera);
 }
 
 void rpg_end_ui_context(void) {
-    EndMode2D();
+    EndMode3D();
     EndDrawing();
 }
 
@@ -38,18 +39,34 @@ common_return_t rpg_game_setup(rpg_game_state_t *gs) {
 }
 
 common_return_t rpg_game_init(rpg_game_state_t *gs) {
-    gs->ui_config.screen_width = 1280;
-    gs->ui_config.screen_height = 720;
+    gs->ui_config.screen_width = 800;
+    gs->ui_config.screen_height = 450;
     return COMMON_SET_RETURN(COMMON_OK, NULL);
 }
 
 common_return_t rpg_game_running(rpg_game_state_t *gs) {
+
+    int tile_width = 100;
+    int tile_height = 50;
+    int tile_depth = 5;
+
     InitWindow(gs->ui_config.screen_width, gs->ui_config.screen_height, "First Window");
     SetTargetFPS(FRAME_RATE);
     rpg_common_skills_t skills = rpg_common_starter_skills();
 
     float time_frame = 0.0f;
+    float game_frame = 0.0f;
     Vector2 touch_position = { 0, 0 };
+    Vector3 cube_position = { 0.0f, 0.0f, 0.0f };
+    Vector3 enemy_cube_position = { 2.0f, 0.0f, 3.0f };
+    Camera3D camera3d = {
+        { 10.0f, 10.0f, 10.0f },
+        cube_position,
+        { 0.0f, 1.0f, 0.0f },
+        45.0f,
+        CAMERA_ORTHOGRAPHIC
+    };
+
 
     float pos_x = 200;
     float pos_y = 50;
@@ -57,16 +74,17 @@ common_return_t rpg_game_running(rpg_game_state_t *gs) {
     float playable_height = GET_SH(gs) - 80.0f;
     Rectangle touch_area = { pos_x, pos_y, playable_width, playable_height};
 
-    Vector2 enemy_position = {pos_x, pos_y};
-    Vector2 player_position = {pos_x + (playable_width / 2) , pos_y + (playable_height / 2)};
-
     int current_gesture = GESTURE_NONE;
     int last_gesture = GESTURE_NONE;
+
     // char *sword_value = "10";
     // char *axe_value = "10";
     // int sword_progress = 0;
     // char *sword_experience = "100";
 
+    int max_length = 6;
+    float padding = 0.1f;
+    float isometric_factor = 1.0f;
     while (!WindowShouldClose()) {
         last_gesture = current_gesture;
         current_gesture = GetGestureDetected();
@@ -82,45 +100,58 @@ common_return_t rpg_game_running(rpg_game_state_t *gs) {
             time_frame = 0.0f;
         }
 
-        if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) {
-            player_position.x += 5.0f;
-            if ((player_position.x + 10) > playable_width + 200 - 20) player_position.x = playable_width + 200 - 20;
+        if (IsKeyReleased(KEY_D)) {
+            cube_position.z -= 2.1f;
+            // if ((cube_position.x + 1.0f) > 2.1f * max_length - 2.0f) cube_position.x = 2.1f * max_length - 2.0f;
+            // if ((player_position.x + 10) > playable_width + 200 - 20) player_position.x = playable_width + 200 - 20;
         }
 
-        if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) {
-            player_position.x -= 5.0f;
-            if ((player_position.x - 10) < 200) player_position.x = 200;
+        if (IsKeyReleased(KEY_A)) {
+            cube_position.z += 2.1f;
+            // if ((player_position.x - 10) < 200) player_position.x = 200;
         }
 
-        if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) {
-            player_position.y += 5.0f;
-            if ((player_position.y + 10) > playable_height + 50 - 20) player_position.y = playable_height + 50 - 20;
+        if (IsKeyReleased(KEY_S)) {
+            cube_position.x += 2.1f;
+            // if ((player_position.y + 10) > playable_height + 50 - 20) player_position.y = playable_height + 50 - 20;
         }
 
-        if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)) {
-            player_position.y -= 5.0f;
-            if ((player_position.y - 10) <= 50) player_position.y = 50;
+        if (IsKeyReleased(KEY_W)) {
+            cube_position.x -= 2.1f;
+            // if ((player_position.y - 10) <= 50) player_position.y = 50;
         }
+        if (enemy_cube_position.x + 2.0f < cube_position.x) enemy_cube_position.x += 0.05f;
+        if (enemy_cube_position.x - 2.0f > cube_position.x) enemy_cube_position.x -= 0.05f;
+        if (enemy_cube_position.z + 2.0f < cube_position.z) enemy_cube_position.z += 0.05f;
+        if (enemy_cube_position.z - 2.0f > cube_position.z) enemy_cube_position.z -= 0.05f;
 
-        if (enemy_position.x + 25 < player_position.x) enemy_position.x += 1;
-        if (enemy_position.x - 25 > player_position.x) enemy_position.x -= 1;
-        if (enemy_position.y + 25 < player_position.y) enemy_position.y += 1;
-        if (enemy_position.y - 25 > player_position.y) enemy_position.y -= 1;
+        camera3d.position.x = cube_position.x + 10.0f;
+        camera3d.position.y = cube_position.y + 10.0f;
+        camera3d.position.z = cube_position.z + 10.0f;
+        camera3d.target = cube_position;
 
-        rpg_beging_ui_context();
-            DrawRectangleRec(touch_area, DARKGRAY);
-            DrawRectangle(205, 55, gs->ui_config.screen_width - 410, gs->ui_config.screen_height - 90, RAYWHITE);
-            if (CheckCollisionPointRec(touch_position, touch_area) && (current_gesture != GESTURE_NONE)) {
-                DrawCircleV(touch_position, 30, MAROON);
+        // rpg_beging_ui_context(camera3d);
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+        BeginMode3D(camera3d);
+            DrawCube(cube_position, 2.0f, 2.0f, 2.0f, RED);
+            DrawCubeWires(cube_position, 2.0f, 2.0f, 2.0f, BLACK);
+            DrawCube(enemy_cube_position, 2.0f, 2.0f, 2.0f, PURPLE);
+            DrawCubeWires(enemy_cube_position, 2.0f, 2.0f, 2.0f, BLACK);
+            for (int col = -max_length; col < max_length; ++col) {
+                for (int row = -max_length; row < max_length; ++row) {
+                    DrawCube((Vector3){(2.0f + padding) * row, -2.0f, (-2.0f - padding) * col}, 2.0f, 1.0f, 2.0f, DARKGREEN);
+                    DrawCubeWires((Vector3){(2.0f + padding) * row, -2.0f, (-2.0f - padding) * col}, 2.0f, 1.0f, 2.0f, BLACK);
+                }
             }
-            DrawRectangle(player_position.x, player_position.y, 20, 20, DARKGREEN);
-            DrawRectangle(enemy_position.x, enemy_position.y, 20, 20, RED);
-
+        EndMode3D();
+            
             // DrawText(TextFormat("%s %s", skills.sword_fighting.name, sword_value), 200, 80, 20, BLACK);
-            // DrawRectangle(200, 120, 200, 20, LIGHTGRAY);
-            // DrawRectangle(200, 120, sword_progress, 20, DARKGREEN);
+            DrawRectangle(200, 120, 200, 20, LIGHTGRAY);
+            DrawRectangle(200, 120, 150, 20, DARKGREEN);
             // DrawText(TextFormat("%s %s", skills.axe_fighting.name, axe_value), 200, 160, 20, BLACK);
-        rpg_end_ui_context();
+        EndDrawing();
+        // rpg_end_ui_context();
     }
 
     CloseWindow();
