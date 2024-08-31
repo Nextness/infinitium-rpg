@@ -82,27 +82,30 @@ common_return_t rpg_game_running(rpg_game_state_t *gs) {
             time_frame = 0.0f;
         }
 
-        // if ((ballPosition.x - ballHalfSize) < 0) ballPosition.x = ballHalfSize;
-        // if ((ballPosition.x + ballHalfSize) > 800) ballPosition.x = 800 - ballHalfSize;
-        // if ((ballPosition.y - ballHalfSize) < 0) ballPosition.y = ballHalfSize;
-        // if ((ballPosition.y + ballHalfSize) > 600) ballPosition.y = 600 - ballHalfSize;
+        if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) {
+            player_position.x += 5.0f;
+            if ((player_position.x + 10) > playable_width + 200 - 20) player_position.x = playable_width + 200 - 20;
+        }
 
-        if (IsKeyDown(KEY_RIGHT)) player_position.x += 2.0f;
-        if (IsKeyDown(KEY_LEFT)) player_position.x -= 2.0f;
-        if (IsKeyDown(KEY_UP)) player_position.y -= 2.0f;
-        if (IsKeyDown(KEY_DOWN)) player_position.y += 2.0f;
+        if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) {
+            player_position.x -= 5.0f;
+            if ((player_position.x - 10) < 200) player_position.x = 200;
+        }
 
-        if ((player_position.x - 10) <= 200 && IsKeyDown(KEY_LEFT)) player_position.x = 200;
-        if ((player_position.x + 10) > playable_width + 200 - 20 && IsKeyDown(KEY_RIGHT)) player_position.x = playable_width + 200 - 20;
-        if ((player_position.y - 10) <= 50 && IsKeyDown(KEY_UP)) player_position.y = 50;
-        if ((player_position.y + 10) > playable_height + 50 - 20 && IsKeyDown(KEY_DOWN)) player_position.y = playable_height + 50 - 20;
-        // if ((player_position.x + 10) <= playable_width - 200) player_position.x = playable_width - 200;
+        if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) {
+            player_position.y += 5.0f;
+            if ((player_position.y + 10) > playable_height + 50 - 20) player_position.y = playable_height + 50 - 20;
+        }
 
-        if (enemy_position.x < player_position.x) enemy_position.x += 1;
-        if (enemy_position.x > player_position.x) enemy_position.x -= 1;
-        if (enemy_position.y < player_position.y) enemy_position.y += 1;
-        if (enemy_position.y > player_position.y) enemy_position.y -= 1;
+        if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)) {
+            player_position.y -= 5.0f;
+            if ((player_position.y - 10) <= 50) player_position.y = 50;
+        }
 
+        if (enemy_position.x + 25 < player_position.x) enemy_position.x += 1;
+        if (enemy_position.x - 25 > player_position.x) enemy_position.x -= 1;
+        if (enemy_position.y + 25 < player_position.y) enemy_position.y += 1;
+        if (enemy_position.y - 25 > player_position.y) enemy_position.y -= 1;
 
         rpg_beging_ui_context();
             DrawRectangleRec(touch_area, DARKGRAY);
