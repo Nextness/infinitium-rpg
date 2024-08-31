@@ -6,8 +6,9 @@
 #include <raylib.h>
 
 #include "rpg_common.h"
+#include "utils_common.h"
 #include "ui_config.c"
-// #include "player.c"
+// #include "player.h"
 
 #define FRAME_RATE 60
 #define MAX_BUILDINGS 100
@@ -17,10 +18,13 @@ typedef struct {
 //    rpg_player_t player;
 } rpg_game_state_t;
 
-void rpg_beging_ui_context(Camera2D camera) {
+#define GET_SH(game_state) (game_state)->ui_config.screen_height
+#define GET_SW(game_state) (game_state)->ui_config.screen_width
+
+void rpg_beging_ui_context(/*Camera2D camera*/void) {
     BeginDrawing();
     ClearBackground(RAYWHITE);
-    BeginMode2D(camera);
+    // BeginMode2D(camera);
 }
 
 void rpg_end_ui_context(void) {
@@ -40,64 +44,79 @@ common_return_t rpg_game_init(rpg_game_state_t *gs) {
 }
 
 common_return_t rpg_game_running(rpg_game_state_t *gs) {
-    // (void)gs;
-    const int screen_width = 1280; 
-    const int screen_height = 720; 
-
     InitWindow(gs->ui_config.screen_width, gs->ui_config.screen_height, "First Window");
-
-    Rectangle player = {400, 280, 40, 40};
-    Rectangle buildings[MAX_BUILDINGS] = {0};
-    Color build_colors[MAX_BUILDINGS] = {0};
-
-    int spacing = 0;
-
-    for (int i = 0; i < MAX_BUILDINGS; i++) {
-        buildings[i].width = (float) GetRandomValue(50, 200);
-        buildings[i].height = (float) GetRandomValue(100, 800);
-        buildings[i].y = screen_height - 400.0f - buildings[i].height;
-        buildings[i].x = -6000.0f + spacing;
-        spacing += (int) buildings[i].width;
-        build_colors[i] = (Color) {
-            .r = GetRandomValue(200, 240),
-            .g = GetRandomValue(200, 240),
-            .b = GetRandomValue(200, 250),
-            .a = 255
-        };
-    }
-
-    Camera2D camera = {0};
-    camera.target = (Vector2) {
-        .x = player.x + 20.0f,
-        .y = player.y + 20.0f
-    };
-    camera.offset = (Vector2) {
-        .x = screen_width/2.0f,
-        .y = screen_height/2.0f
-    };
-    camera.rotation = 0.0f;
-    camera.zoom = 1.0f;
-
     SetTargetFPS(FRAME_RATE);
+    rpg_common_skills_t skills = rpg_common_starter_skills();
+
+    float time_frame = 0.0f;
+    Vector2 touch_position = { 0, 0 };
+
+    float pos_x = 200;
+    float pos_y = 50;
+    float playable_width = GET_SW(gs) - 400.0f;
+    float playable_height = GET_SH(gs) - 80.0f;
+    Rectangle touch_area = { pos_x, pos_y, playable_width, playable_height};
+
+    Vector2 enemy_position = {pos_x, pos_y};
+    Vector2 player_position = {pos_x + (playable_width / 2) , pos_y + (playable_height / 2)};
+
+    int current_gesture = GESTURE_NONE;
+    int last_gesture = GESTURE_NONE;
+    // char *sword_value = "10";
+    // char *axe_value = "10";
+    // int sword_progress = 0;
+    // char *sword_experience = "100";
 
     while (!WindowShouldClose()) {
-        if (IsKeyDown(KEY_RIGHT)) player.x += 5;
-        else if (IsKeyDown(KEY_LEFT)) player.x += -5;
+        last_gesture = current_gesture;
+        current_gesture = GetGestureDetected();
+        touch_position = GetTouchPosition(0);
 
-        camera.target = (Vector2) { player.x + 20, player.y + 20};
+        // In game timer
+        if ((time_frame += GetFrameTime()) >= 1.0f) {
+            // sword_progress += 2;
+            // mpz_add_ui(skills.sword_fighting.current_level, skills.sword_fighting.current_level, 1);
+            // sword_value = mpz_get_str(NULL, 10, skills.sword_fighting.current_level);
+            // mpz_add_ui(skills.axe_fighting.current_level, skills.axe_fighting.current_level, 1);
+            // axe_value = mpz_get_str(NULL, 10, skills.sword_fighting.current_level);
+            time_frame = 0.0f;
+        }
 
-        camera.zoom += (float) GetMouseWheelMove()*0.05f;
-        if (camera.zoom > 3.0f) camera.zoom = 3.0f;
-        else if (camera.zoom < 0.1f) camera.zoom = 0.1f;
+        // if ((ballPosition.x - ballHalfSize) < 0) ballPosition.x = ballHalfSize;
+        // if ((ballPosition.x + ballHalfSize) > 800) ballPosition.x = 800 - ballHalfSize;
+        // if ((ballPosition.y - ballHalfSize) < 0) ballPosition.y = ballHalfSize;
+        // if ((ballPosition.y + ballHalfSize) > 600) ballPosition.y = 600 - ballHalfSize;
 
-        rpg_beging_ui_context(camera);
-            DrawRectangle(-6000, 320, 13000, 8000, DARKGRAY);
-            for (int i = 0; i < MAX_BUILDINGS; i++) {
-                DrawRectangleRec(buildings[i], build_colors[i]);
+        if (IsKeyDown(KEY_RIGHT)) player_position.x += 2.0f;
+        if (IsKeyDown(KEY_LEFT)) player_position.x -= 2.0f;
+        if (IsKeyDown(KEY_UP)) player_position.y -= 2.0f;
+        if (IsKeyDown(KEY_DOWN)) player_position.y += 2.0f;
+
+        if ((player_position.x - 10) <= 200 && IsKeyDown(KEY_LEFT)) player_position.x = 200;
+        if ((player_position.x + 10) > playable_width + 200 - 20 && IsKeyDown(KEY_RIGHT)) player_position.x = playable_width + 200 - 20;
+        if ((player_position.y - 10) <= 50 && IsKeyDown(KEY_UP)) player_position.y = 50;
+        if ((player_position.y + 10) > playable_height + 50 - 20 && IsKeyDown(KEY_DOWN)) player_position.y = playable_height + 50 - 20;
+        // if ((player_position.x + 10) <= playable_width - 200) player_position.x = playable_width - 200;
+
+        if (enemy_position.x < player_position.x) enemy_position.x += 1;
+        if (enemy_position.x > player_position.x) enemy_position.x -= 1;
+        if (enemy_position.y < player_position.y) enemy_position.y += 1;
+        if (enemy_position.y > player_position.y) enemy_position.y -= 1;
+
+
+        rpg_beging_ui_context();
+            DrawRectangleRec(touch_area, DARKGRAY);
+            DrawRectangle(205, 55, gs->ui_config.screen_width - 410, gs->ui_config.screen_height - 90, RAYWHITE);
+            if (CheckCollisionPointRec(touch_position, touch_area) && (current_gesture != GESTURE_NONE)) {
+                DrawCircleV(touch_position, 30, MAROON);
             }
-            DrawRectangleRec(player, RED);
-            DrawLine((int) camera.target.x, -screen_height*10, (int) camera.target.x, screen_height*10, GREEN);
-            DrawLine(-screen_width*10, (int) camera.target.y, screen_width*10, (int) camera.target.y, GREEN);
+            DrawRectangle(player_position.x, player_position.y, 20, 20, DARKGREEN);
+            DrawRectangle(enemy_position.x, enemy_position.y, 20, 20, RED);
+
+            // DrawText(TextFormat("%s %s", skills.sword_fighting.name, sword_value), 200, 80, 20, BLACK);
+            // DrawRectangle(200, 120, 200, 20, LIGHTGRAY);
+            // DrawRectangle(200, 120, sword_progress, 20, DARKGREEN);
+            // DrawText(TextFormat("%s %s", skills.axe_fighting.name, axe_value), 200, 160, 20, BLACK);
         rpg_end_ui_context();
     }
 
@@ -112,7 +131,6 @@ common_return_t rpg_game_deinit(void) {
 
 common_return_t rpg_game_shutdown(rpg_game_state_t *gs) {
     (void)gs;
-    // free(gs);
     return COMMON_SET_RETURN(COMMON_OK, NULL);
 }
 
