@@ -44,6 +44,23 @@ common_return_t rpg_game_init(rpg_game_state_t *gs) {
     return COMMON_SET_RETURN(COMMON_OK, NULL);
 }
 
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+
+float progress_tracker(float max_exp, float current_exp) {
+    return (1 - ((max_exp - current_exp) / max_exp));
+}
+
+float next_exp_bump(int next_level) {
+    const int minimum_exp = 100;
+    return (float)(10 * next_level + minimum_exp);
+}
+
+float exp_progress_tracker(float current_required_exp, float current_exp, float previous_required_exp) {
+    current_required_exp -= previous_required_exp;
+    current_exp -= previous_required_exp;
+    return (1 - (current_required_exp - current_exp) / current_required_exp);
+}
+
 common_return_t rpg_game_running(rpg_game_state_t *gs) {
 
     int tile_width = 100;
@@ -85,6 +102,13 @@ common_return_t rpg_game_running(rpg_game_state_t *gs) {
     int max_length = 6;
     float padding = 0.1f;
     float isometric_factor = 1.0f;
+
+    float current_exp = 0.0f;
+    float max_exp = 100.0f;
+    float exp_percentage = 0.0f;
+    int current_level = 0;
+
+    float previous_exp_requirement = 0.0f;
     while (!WindowShouldClose()) {
         last_gesture = current_gesture;
         current_gesture = GetGestureDetected();
@@ -92,6 +116,17 @@ common_return_t rpg_game_running(rpg_game_state_t *gs) {
 
         // In game timer
         if ((time_frame += GetFrameTime()) >= 1.0f) {
+            current_exp += 2.0f;
+
+            exp_percentage = exp_progress_tracker(max_exp, current_exp, previous_exp_requirement);
+            printf("Current level: %d\n", current_level);
+            printf("Current EXP %f | Previous required exp %f | max_exp %f\n", current_exp, previous_exp_requirement, max_exp);
+            if (exp_percentage >= 1.0f) {
+                if (exp_percentage > 1.0f) exp_percentage = 1.0f;
+                previous_exp_requirement += next_exp_bump(current_level);
+                current_level++;
+                max_exp += next_exp_bump(current_level);
+            }
             // sword_progress += 2;
             // mpz_add_ui(skills.sword_fighting.current_level, skills.sword_fighting.current_level, 1);
             // sword_value = mpz_get_str(NULL, 10, skills.sword_fighting.current_level);
@@ -147,8 +182,8 @@ common_return_t rpg_game_running(rpg_game_state_t *gs) {
         EndMode3D();
             
             // DrawText(TextFormat("%s %s", skills.sword_fighting.name, sword_value), 200, 80, 20, BLACK);
-            DrawRectangle(200, 120, 200, 20, LIGHTGRAY);
-            DrawRectangle(200, 120, 150, 20, DARKGREEN);
+            DrawRectangle(200, 120, 150, 20, LIGHTGRAY);
+            DrawRectangle(200, 120, 150 * exp_percentage, 20, DARKGREEN);
             // DrawText(TextFormat("%s %s", skills.axe_fighting.name, axe_value), 200, 160, 20, BLACK);
         EndDrawing();
         // rpg_end_ui_context();
