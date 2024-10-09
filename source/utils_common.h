@@ -14,6 +14,7 @@ typedef struct {
 #define COMMON_SET_RETURN(common, error) ((common_return_t) { (common), (error) })
 
 #define COMMON_GET_RETURN(common_return_t) (common_return_t).res
+#define COMMON_GET_ERR_MSG(common_return_t) (common_return_t).errmor_msg
 
 #define COMMON_CHECK_ASSERT_ERROR(common_return_t, failed_at)                               \
 do {                                                                                        \
