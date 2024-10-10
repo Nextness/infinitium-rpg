@@ -13,10 +13,6 @@
 #define FRAME_RATE 60
 #define MAX_BUILDINGS 100
 
-#define in
-#define out
-#define inout
-
 typedef struct {
     rpg_ui_config_t ui_config;
     // rpg_player_t player;
@@ -41,7 +37,7 @@ rpg_end_ui_context(void)
 }
 
 common_return_t
-rpg_game_setup(in rpg_game_state_t *gs)
+rpg_game_setup(rpg_game_state_t *gs in())
 {
     (void)gs;
     SetTraceLogLevel(LOG_NONE);
@@ -49,7 +45,7 @@ rpg_game_setup(in rpg_game_state_t *gs)
 }
 
 common_return_t
-rpg_game_init(inout rpg_game_state_t *gs)
+rpg_game_init(rpg_game_state_t *gs inout())
 {
     gs->ui_config.screen_width = 800;
     gs->ui_config.screen_height = 450;
@@ -57,7 +53,7 @@ rpg_game_init(inout rpg_game_state_t *gs)
 }
 
 common_return_t
-progress_tracker(in float max_exp, in float current_exp, out float *result)
+progress_tracker(float max_exp in(), float current_exp in(), float *result out())
 {
     *result = 1 - ((max_exp - current_exp) / max_exp);
     if (*result <= 0.0f) {
@@ -67,16 +63,17 @@ progress_tracker(in float max_exp, in float current_exp, out float *result)
     return common_set_return(COMMON_OK, NULL);
 }
 
-float
-next_exp_bump(int next_level)
+common_return_t
+next_exp_bump(int next_level in(), float *result out())
 {
     const int minimum_exp = 100;
-    return (float)(10 * next_level + minimum_exp);
+    *result += (float)(10 * next_level + minimum_exp);
+    return common_set_return(COMMON_OK, NULL);
 }
 
 common_return_t
-exp_progress_tracker(in float current_required_exp, in float current_exp,
-                     in float previous_required_exp, out float *result)
+exp_progress_tracker(float current_required_exp in(), float current_exp in(),
+                     float previous_required_exp in(), float *result out())
 {
     current_required_exp -= previous_required_exp;
     current_exp -= previous_required_exp;
@@ -89,7 +86,43 @@ exp_progress_tracker(in float current_required_exp, in float current_exp,
 }
 
 common_return_t
-rpg_game_running(inout rpg_game_state_t *gs)
+rpg_game_logic_loop(float *current_exp inout(), float *max_exp inout(),
+                    float *previous_exp_requirement inout(), float *exp_percentage inout(),
+                    int *current_level inout())
+{
+    common_return_t error;
+    *current_exp += 10.0f;
+    error = exp_progress_tracker(*max_exp, *current_exp, *previous_exp_requirement, exp_percentage);
+    if unlikely(common_get_error(error) != COMMON_OK) {
+        common_log(ERROR, "Failed to track exp progress...");
+        return error;
+    }
+
+    common_log(INFO, "Current level: %d", *current_level);
+    common_log(INFO, "Current EXP %f | Previous required exp %f | max_exp %f", *current_exp, *previous_exp_requirement, *max_exp);
+
+    if (*exp_percentage >= 1.0f) {
+        if (*exp_percentage >= 1.0f) *exp_percentage = 1.0f;
+
+        // Be careful in here because of the post increment...
+        error = next_exp_bump((*current_level)++, previous_exp_requirement);
+        if unlikely(common_get_error(error) != COMMON_OK) {
+            common_log(ERROR, "Failed at bumping exp...");
+            return error;
+        }
+
+        error = next_exp_bump(*current_level, max_exp);
+        if unlikely(common_get_error(error) != COMMON_OK) {
+            common_log(ERROR, "Failed at bumping exp...");
+            return error;
+        }
+    }
+    return common_set_return(COMMON_OK, NULL);
+}
+
+
+common_return_t
+rpg_game_running(rpg_game_state_t *gs inout())
 {
     InitWindow(gs->ui_config.screen_width, gs->ui_config.screen_height, "First Window");
     SetTargetFPS(FRAME_RATE);
@@ -101,24 +134,12 @@ rpg_game_running(inout rpg_game_state_t *gs)
     float exp_percentage = 0.0f;
     int current_level = 0;
     float previous_exp_requirement = 0.0f;
-    common_return_t error;
+    // common_return_t error;
 
     while (!WindowShouldClose()) {
         // In game timer
         if ((time_frame += GetFrameTime()) >= 1.0f) {
-            current_exp += 2.0f;
-            error = exp_progress_tracker(max_exp, current_exp, previous_exp_requirement, &exp_percentage);
-            if (common_get_error(error) != COMMON_OK) {
-                // TODO: handle the error, log the error a file and close the application...
-            }
-            printf("Current level: %d\n", current_level);
-            printf("Current EXP %f | Previous required exp %f | max_exp %f\n", current_exp, previous_exp_requirement, max_exp);
-            if (exp_percentage >= 1.0f) {
-                if (exp_percentage > 1.0f) exp_percentage = 1.0f;
-                previous_exp_requirement += next_exp_bump(current_level);
-                current_level++;
-                max_exp += next_exp_bump(current_level);
-            }
+            rpg_game_logic_loop(&current_exp, &max_exp, &previous_exp_requirement, &exp_percentage, &current_level);
             time_frame = 0.0f;
         }
 
@@ -135,13 +156,14 @@ rpg_game_running(inout rpg_game_state_t *gs)
 
 
 common_return_t
-rpg_game_deinit(void)
+rpg_game_deinit(rpg_game_state_t *gs inout())
 {
+    (void)gs;
     return common_set_return(COMMON_OK, NULL);
 }
 
 common_return_t
-rpg_game_shutdown(inout rpg_game_state_t *gs)
+rpg_game_shutdown(rpg_game_state_t *gs inout())
 {
     (void)gs;
     return common_set_return(COMMON_OK, NULL);
@@ -150,22 +172,13 @@ rpg_game_shutdown(inout rpg_game_state_t *gs)
 int
 main(void)
 {
-    common_return_t ret;
     rpg_game_state_t gs;
+    common_return_t error;
 
-    ret = rpg_game_setup(&gs);
-    common_check_assert_error(ret, "rpg_game_setup");
-
-    ret = rpg_game_init(&gs);
-    common_check_assert_error(ret, "rpg_game_init");
-
-    ret = rpg_game_running(&gs);
-    common_check_assert_error(ret, "rpg_game_running");
-
-    ret = rpg_game_deinit();
-    common_check_assert_error(ret, "rpg_game_deinit");
-
-    ret = rpg_game_shutdown(&gs);
-    common_check_assert_error(ret, "rpg_game_shutdown");
+    common_log_state_context(&gs, error, "rpg_game_setup",    rpg_game_setup,    "Starting", "Completed successfully");
+    common_log_state_context(&gs, error, "rpg_game_init",     rpg_game_init,     "Starting", "Completed successfully");
+    common_log_state_context(&gs, error, "rpg_game_running",  rpg_game_running,  "Running",  "Stoping");
+    common_log_state_context(&gs, error, "rpg_game_deinit",   rpg_game_deinit,   "Starting", "Completed successfully");
+    common_log_state_context(&gs, error, "rpg_game_shutdown", rpg_game_shutdown, "Starting", "Completed successfully");
 }
 
