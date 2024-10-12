@@ -3,6 +3,7 @@
 
 typedef struct {
     // Config functions
+    void (*set_trace_log_level)(int);
     void (*init_window)(int, int, const char *);
     void (*set_target_fps)(int);
     bool (*window_should_close)(void);
@@ -18,6 +19,7 @@ typedef struct {
 } wrapper_raylib_t;
 
 #define rl_config_functions                   \
+    .set_trace_log_level = SetTraceLogLevel,  \
     .init_window = InitWindow,                \
     .set_target_fps = SetTargetFPS,           \
     .window_should_close = WindowShouldClose, \
@@ -25,14 +27,14 @@ typedef struct {
     .begin_drawing = BeginDrawing,            \
     .clear_background = ClearBackground,      \
     .end_drawing = EndDrawing,                \
-    .close_window = CloseWindow,
+    .close_window = CloseWindow
 
 #define rl_ui_object_functions       \
-    .draw_rectangle = DrawRectangle,
+    .draw_rectangle = DrawRectangle
 
 #define init_raylib_wrapper(rl) \
 wrapper_raylib_t rl = {         \
-    rl_config_functions         \
-    rl_ui_object_functions      \
+    rl_config_functions,        \
+    rl_ui_object_functions,     \
 };
 
