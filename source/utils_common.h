@@ -12,6 +12,24 @@
     #define unlikely(x) ((x))
 #endif
 
+#define common_clamp_min(value, min) \
+do {                                 \
+    if ((value) < (min)) {           \
+        value = value;               \
+        break;                       \
+    }                                \
+    value = min;                     \
+} while (0)
+
+#define common_clamp_max(value, max) \
+do {                                 \
+    if ((value) > (max)) {           \
+        value = value;               \
+        break;                       \
+    }                                \
+    value = max;                     \
+} while (0)
+
 // This is used just to make my life easier when
 // handling errors. Instead of having returns, I
 // just have pointers to the results as input.

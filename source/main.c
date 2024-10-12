@@ -6,6 +6,7 @@
 #include <raylib.h>
 
 #include "player.h"
+#include "game_state.h"
 #include "utils_common.h"
 #include "ui_config.c"
 #include "wrapper.h"
@@ -13,39 +14,10 @@
 #define FRAME_RATE 60
 #define MAX_BUILDINGS 100
 
-
-typedef struct {
-    float time_frame;
-    rpg_ui_config_t ui_config;
-    rpg_player_t player;
-} rpg_game_state_t;
-
-#define using_rpg_player_t(gs, player) rpg_player_t *(player) = &(gs)->player
-#define using_rpg_ui_config_t(gs, ui_config) rpg_ui_config_t* (ui_config) = &(gs)->ui_config
-
-
-#define clamp_min(value, min) \
-do {                          \
-    if ((value) < (min)) {    \
-        value = value;        \
-        break;                \
-    }                         \
-    value = min;              \
-} while (0)
-
-#define clamp_max(value, max) \
-do {                          \
-    if ((value) > (max)) {    \
-        value = value;        \
-        break;                \
-    }                         \
-    value = max;              \
-} while (0)
-
 init_raylib_wrapper(rl);
 
 common_return_t
-rpg_game_setup(rpg_game_state_t *gs in())
+rpg_game_setup(rpg_game_state_t *gs inout())
 {
     (void)gs;
     rl.set_trace_log_level(LOG_NONE);
@@ -63,7 +35,7 @@ rpg_game_init(rpg_game_state_t *gs inout())
     ui_config->screen_height = 450;
     ui_config->screen_width = 800;
 
-    error = rpg_player_init(&gs->player);
+    error = rpg_player_init(player);
     if unlikely(common_get_error(error) != COMMON_OK) {
         common_log(ERROR, "Failed to initialization of the player...");
         return error;
@@ -120,7 +92,7 @@ rpg_game_logic_loop(rpg_game_state_t *gs inout())
 #endif
 
     if (player->exp_percentage >= 1.0f) {
-        clamp_min(player->exp_percentage, 1.0f);
+        common_clamp_min(player->exp_percentage, 1.0f);
         error = next_exp_bump(player->current_level++, &player->previous_exp_requirement);
         if unlikely(common_get_error(error) != COMMON_OK) {
             common_log(ERROR, "Failed at bumping exp...");

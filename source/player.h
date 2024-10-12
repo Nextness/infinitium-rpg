@@ -12,6 +12,8 @@ typedef struct {
     int current_level;
 } rpg_player_t;
 
+#define using_rpg_player_t(gs, player) rpg_player_t *(player) = &(gs)->player
+
 common_return_t
 rpg_player_init(rpg_player_t *player inout());
 
