@@ -1,8 +1,18 @@
 #ifndef RPG_PLAYER_H_
 #define RPG_PLAYER_H_
 
+#include "utils_common.h"
 #include "rpg_common.h"
 
-rpg_common_entity_t rpg_player_init();
+typedef struct {
+    float current_exp;
+    float max_exp;
+    float exp_percentage;
+    float previous_exp_requirement;
+    int current_level;
+} rpg_player_t;
+
+common_return_t
+rpg_player_init(rpg_player_t *player inout());
 
 #endif // RPG_PLAYER_H_

@@ -5,17 +5,19 @@
 #include <gmp.h>
 #include <raylib.h>
 
-#include "rpg_common.h"
+// #include "rpg_common.h"
+#include "player.h"
 #include "utils_common.h"
 #include "ui_config.c"
-// #include "player.h"
+#include "wrapper.h"
 
 #define FRAME_RATE 60
 #define MAX_BUILDINGS 100
 
 typedef struct {
+    float time_frame;
     rpg_ui_config_t ui_config;
-    // rpg_player_t player;
+    rpg_player_t player;
 } rpg_game_state_t;
 
 #define GET_SH(game_state) (game_state)->ui_config.screen_height
@@ -47,8 +49,22 @@ rpg_game_setup(rpg_game_state_t *gs in())
 common_return_t
 rpg_game_init(rpg_game_state_t *gs inout())
 {
+    common_return_t error;
     gs->ui_config.screen_width = 800;
     gs->ui_config.screen_height = 450;
+
+    gs->time_frame = 0.0f;
+
+    error = rpg_player_init(&gs->player);
+    if unlikely(common_get_error(error) != COMMON_OK) {
+        common_log(ERROR, "Failed to initialization of the player...");
+        return error;
+    }
+
+    common_log(DEBUG, "Initial player status:");
+    common_log(DEBUG, "Current level: %d", gs->player.current_level);
+    common_log(DEBUG, "Current EXP %f | Previous required exp %f | max_exp %f", gs->player.current_exp, gs->player.previous_exp_requirement, gs->player.max_exp);
+
     return common_set_return(COMMON_OK, NULL);
 }
 
@@ -86,32 +102,31 @@ exp_progress_tracker(float current_required_exp in(), float current_exp in(),
 }
 
 common_return_t
-rpg_game_logic_loop(float *current_exp inout(), float *max_exp inout(),
-                    float *previous_exp_requirement inout(), float *exp_percentage inout(),
-                    int *current_level inout())
+rpg_game_logic_loop(rpg_game_state_t *gs inout())
 {
     common_return_t error;
-    *current_exp += 10.0f;
-    error = exp_progress_tracker(*max_exp, *current_exp, *previous_exp_requirement, exp_percentage);
+
+    gs->player.current_exp += 10.0f;
+    error = exp_progress_tracker(gs->player.max_exp, gs->player.current_exp, gs->player.previous_exp_requirement, &gs->player.exp_percentage);
     if unlikely(common_get_error(error) != COMMON_OK) {
         common_log(ERROR, "Failed to track exp progress...");
         return error;
     }
 
-    common_log(INFO, "Current level: %d", *current_level);
-    common_log(INFO, "Current EXP %f | Previous required exp %f | max_exp %f", *current_exp, *previous_exp_requirement, *max_exp);
+    common_log(DEBUG, "Current level: %d", gs->player.current_level);
+    common_log(DEBUG, "Current EXP %f | Previous required exp %f | max_exp %f", gs->player.current_exp, gs->player.previous_exp_requirement, gs->player.max_exp);
 
-    if (*exp_percentage >= 1.0f) {
-        if (*exp_percentage >= 1.0f) *exp_percentage = 1.0f;
+    if (gs->player.exp_percentage >= 1.0f) {
+        if (gs->player.exp_percentage >= 1.0f) gs->player.exp_percentage = 1.0f;
 
         // Be careful in here because of the post increment...
-        error = next_exp_bump((*current_level)++, previous_exp_requirement);
+        error = next_exp_bump((gs->player.current_level)++, &gs->player.previous_exp_requirement);
         if unlikely(common_get_error(error) != COMMON_OK) {
             common_log(ERROR, "Failed at bumping exp...");
             return error;
         }
 
-        error = next_exp_bump(*current_level, max_exp);
+        error = next_exp_bump(gs->player.current_level, &gs->player.max_exp);
         if unlikely(common_get_error(error) != COMMON_OK) {
             common_log(ERROR, "Failed at bumping exp...");
             return error;
@@ -120,37 +135,30 @@ rpg_game_logic_loop(float *current_exp inout(), float *max_exp inout(),
     return common_set_return(COMMON_OK, NULL);
 }
 
+init_raylib_wrapper(rl);
 
 common_return_t
 rpg_game_running(rpg_game_state_t *gs inout())
 {
-    InitWindow(gs->ui_config.screen_width, gs->ui_config.screen_height, "First Window");
-    SetTargetFPS(FRAME_RATE);
+    rl.init_window(gs->ui_config.screen_width, gs->ui_config.screen_height, "First Window");
+    rl.set_target_fps(FRAME_RATE);
 
-    // rpg_common_skills_t skills = rpg_common_starter_skills();
-    float time_frame = 0.0f;
-    float current_exp = 0.0f;
-    float max_exp = 100.0f;
-    float exp_percentage = 0.0f;
-    int current_level = 0;
-    float previous_exp_requirement = 0.0f;
-    // common_return_t error;
-
-    while (!WindowShouldClose()) {
-        // In game timer
-        if ((time_frame += GetFrameTime()) >= 1.0f) {
-            rpg_game_logic_loop(&current_exp, &max_exp, &previous_exp_requirement, &exp_percentage, &current_level);
-            time_frame = 0.0f;
+    while (!rl.window_should_close()) {
+        // In game timer has passed
+        if ((gs->time_frame += rl.get_frame_time()) >= 1.0f) {
+            rpg_game_logic_loop(gs);
+            gs->time_frame = 0.0f;
         }
 
         // Drawing the game
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
-            DrawRectangle(100, 100, 200, 50, (Color){255, 00, 00, 255});
-        EndDrawing();
+        rl.begin_drawing();
+        rl.clear_background(RAYWHITE);
+            rl.draw_rectangle(100, 100, 200, 50, (Color){255, 00, 00, 255});
+        rl.end_drawing();
     }
 
-    CloseWindow();
+    rl.close_window();
+    // CloseWindow();
     return common_set_return(COMMON_OK, NULL);
 }
 
