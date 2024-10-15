@@ -61,14 +61,14 @@ next_exp_bump(int next_level in(), float *result out())
 common_return_t
 exp_progress_tracker(rpg_player_t *player inout())
 {
-    float local_max_exp = player->max_exp - player->previous_exp_requirement;
-    float local_current_exp = player->current_exp - player->previous_exp_requirement;
-    float local_result = 1 - (local_max_exp - local_current_exp) / local_max_exp;
-    if unlikely(local_result <= 0.0f) {
+    float max_exp = player->max_exp - player->previous_exp_requirement;
+    float current_exp = player->current_exp - player->previous_exp_requirement;
+    float result = 1 - (max_exp - current_exp) / max_exp;
+    if unlikely(result <= 0.0f) {
         player->exp_percentage = 0.0f;
         return common_set_return(COMMON_ERROR, "Value cannot be less than or equal to '0'\n");
     }
-    player->exp_percentage = local_result;
+    player->exp_percentage = result;
     return common_set_return(COMMON_OK, NULL);
 }
 
@@ -114,9 +114,19 @@ rpg_game_running(rpg_game_state_t *gs inout())
     rl.init_window(gs->ui_config.screen_width, gs->ui_config.screen_height, "First Window");
     rl.set_target_fps(FRAME_RATE);
 
+    Rectangle touch_area = {100, 100, 200, 50};
+    Vector2 touch_position = {0};
+    int current_gesture = GESTURE_NONE;
+    int last_gesture = GESTURE_NONE;
+
     while (!rl.window_should_close()) {
+        last_gesture = current_gesture;
+        current_gesture = GetGestureDetected();
+        touch_position = GetTouchPosition(0);
+
         // In game timer has passed
-        if ((gs->time_frame += rl.get_frame_time()) >= 1.0f) {
+        gs->time_frame += rl.get_frame_time();
+        if likely(gs->time_frame >= 1.0f) {
             rpg_game_logic_loop(gs);
             gs->time_frame = 0.0f;
         }
@@ -124,7 +134,13 @@ rpg_game_running(rpg_game_state_t *gs inout())
         // Drawing the game
         rl.begin_drawing();
         rl.clear_background(RAYWHITE);
-            rl.draw_rectangle(100, 100, 200, 50, (Color){255, 00, 00, 255});
+        Color col = {0};
+        if (CheckCollisionPointRec(touch_position, touch_area) && (current_gesture != GESTURE_NONE)) {
+            col = (Color){255, 0, 255, 255};
+        } else {
+            col = (Color){255, 0, 0, 255};
+        }
+        rl.draw_rectangle(100, 100, 200, 50, col);
         rl.end_drawing();
     }
 

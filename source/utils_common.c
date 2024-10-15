@@ -1,13 +1,25 @@
 #include <stdio.h>
 #include <stdarg.h>
+#include <time.h>
+
 #include "utils_common.h"
+
+
 
 #define GLOBAL_LOG_LEVEL 0
 
 void
 __log_helper(FILE *stream, const char *tag, const char *fmt, va_list args)
 {
-    fprintf(stream, "[%s] ", tag);
+    time_t raw_time;
+    struct tm *time_info;
+
+    time(&raw_time);
+    time_info = localtime(&raw_time);
+    fprintf(stream, "%s - ", tag);
+    fprintf(stream, "%d-%d-%d %d:%d:%d - ", 
+            time_info->tm_year + 1900, time_info->tm_mon + 1, time_info->tm_mday, time_info->tm_hour,
+            time_info->tm_min, time_info->tm_sec);
     vfprintf(stream, fmt, args);
     fprintf(stream, "\n");
 }
