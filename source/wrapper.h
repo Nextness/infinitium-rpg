@@ -16,6 +16,11 @@ typedef struct {
     // UI Object functions
     void (*draw_rectangle)(int, int, int, int, Color);
 
+    // Interactions
+    int (*get_gesture_detected)(void);
+    Vector2 (*get_touch_position)(int index);
+    bool (*check_collision_point_rec)(Vector2 point, Rectangle rec);
+
 } wrapper_raylib_t;
 
 #define rl_config_functions                   \
@@ -32,9 +37,17 @@ typedef struct {
 #define rl_ui_object_functions       \
     .draw_rectangle = DrawRectangle
 
+#define rl_interaction_functions                        \
+    .get_gesture_detected = GetGestureDetected,         \
+    .get_touch_position = GetTouchPosition,             \
+    .check_collision_point_rec = CheckCollisionPointRec
+
 #define init_raylib_wrapper(rl) \
 wrapper_raylib_t rl = {         \
     rl_config_functions,        \
     rl_ui_object_functions,     \
+    rl_interaction_functions,   \
 };
+
+init_raylib_wrapper(rl);
 

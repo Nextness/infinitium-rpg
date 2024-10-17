@@ -14,8 +14,6 @@
 #define FRAME_RATE 60
 #define MAX_BUILDINGS 100
 
-init_raylib_wrapper(rl);
-
 common_return_t
 rpg_game_setup(rpg_game_state_t *gs inout())
 {
@@ -44,7 +42,8 @@ rpg_game_init(rpg_game_state_t *gs inout())
 #ifdef DEVELOPER_BUILD
     common_log(DEBUG, "Initial player status:");
     common_log(DEBUG, "Current level: %d", player->current_level);
-    common_log(DEBUG, "Current EXP %f | Previous required exp %f | max_exp %f", player->current_exp, player->previous_exp_requirement, player->max_exp);
+    common_log(DEBUG, "Current EXP %f | Previous required exp %f | max_exp %f",
+               player->current_exp, player->previous_exp_requirement, player->max_exp);
 #endif
 
     return common_set_return(COMMON_OK, NULL);
@@ -88,7 +87,8 @@ rpg_game_logic_loop(rpg_game_state_t *gs inout())
 
 #ifdef DEVELOPER_BUILD
     common_log(DEBUG, "Current level: %d", player->current_level);
-    common_log(DEBUG, "Current EXP %f | Previous required exp %f | max_exp %f", player->current_exp, player->previous_exp_requirement, player->max_exp);
+    common_log(DEBUG, "Current EXP %f | Previous required exp %f | max_exp %f",
+               player->current_exp, player->previous_exp_requirement, player->max_exp);
 #endif
 
     if (player->exp_percentage >= 1.0f) {
@@ -109,8 +109,32 @@ rpg_game_logic_loop(rpg_game_state_t *gs inout())
 }
 
 common_return_t
+rpg_button(Vector2 mouse_position in(), int posX in(), int posY in(), int width in(),
+           int height in(), Color button_color in(), int border_width in(), Color border_color in(), char *text in(),
+           rpg_game_state_t *gs inout())
+{
+    Rectangle button_area = {posX, posY, width, height};
+    Color current_button_color = button_color;
+    Color tint = {0};
+    if (rl.check_collision_point_rec(mouse_position, button_area)) {
+        int current_gesture = rl.get_gesture_detected();
+        if (current_gesture == GESTURE_TAP || current_gesture == GESTURE_HOLD) {
+            tint = (Color){164, 164, 164, 255};
+        } else {
+            tint = (Color){216, 216, 216, 255};
+        }
+        current_button_color = ColorAlphaBlend(current_button_color, button_color, tint);
+    } else {
+        current_button_color = button_color;
+    }
+    rl.draw_rectangle(posX, posY, width, height, current_button_color);
+    return common_set_return(COMMON_OK, NULL);
+}
+
+common_return_t
 rpg_game_running(rpg_game_state_t *gs inout())
 {
+    using_rpg_player_t(gs, player);
     rl.init_window(gs->ui_config.screen_width, gs->ui_config.screen_height, "First Window");
     rl.set_target_fps(FRAME_RATE);
 
@@ -119,10 +143,14 @@ rpg_game_running(rpg_game_state_t *gs inout())
     int current_gesture = GESTURE_NONE;
     int last_gesture = GESTURE_NONE;
 
+    char exp[128];
+    char bought_str[128];
+    int bought = 0;
+    float price = 100.0f;
     while (!rl.window_should_close()) {
         last_gesture = current_gesture;
-        current_gesture = GetGestureDetected();
-        touch_position = GetTouchPosition(0);
+        current_gesture = rl.get_gesture_detected();
+        touch_position = rl.get_touch_position(0);
 
         // In game timer has passed
         gs->time_frame += rl.get_frame_time();
@@ -134,13 +162,12 @@ rpg_game_running(rpg_game_state_t *gs inout())
         // Drawing the game
         rl.begin_drawing();
         rl.clear_background(RAYWHITE);
-        Color col = {0};
-        if (CheckCollisionPointRec(touch_position, touch_area) && (current_gesture != GESTURE_NONE)) {
-            col = (Color){255, 0, 255, 255};
-        } else {
-            col = (Color){255, 0, 0, 255};
-        }
-        rl.draw_rectangle(100, 100, 200, 50, col);
+
+        sprintf(exp, "%.2f", player->current_exp);
+        sprintf(bought_str, "%d", bought);
+        DrawText(exp, 100, 50, 24, DARKGRAY);
+        DrawText(bought_str, 200, 50, 24, LIGHTGRAY);
+        rpg_button(touch_position, 100, 100, 200, 50, RED, NULL, BLACK, NULL, NULL);
         rl.end_drawing();
     }
 
