@@ -198,10 +198,10 @@ main(void)
     rpg_game_state_t gs;
     common_return_t error;
 
-    common_log_state_context(&gs, error, "rpg_game_setup",    rpg_game_setup,    "Starting", "Completed successfully");
-    common_log_state_context(&gs, error, "rpg_game_init",     rpg_game_init,     "Starting", "Completed successfully");
-    common_log_state_context(&gs, error, "rpg_game_running",  rpg_game_running,  "Running",  "Stoping");
-    common_log_state_context(&gs, error, "rpg_game_deinit",   rpg_game_deinit,   "Starting", "Completed successfully");
-    common_log_state_context(&gs, error, "rpg_game_shutdown", rpg_game_shutdown, "Starting", "Completed successfully");
+    rpg_game_setup(&gs);
+    rpg_game_init(&gs);
+    rpg_game_running(&gs);
+    rpg_game_deinit(&gs);
+    rpg_game_shutdown(&gs);
 }
 

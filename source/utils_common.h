@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <time.h>
 
 #ifdef __GNUC__
     #define likely(x)   (__builtin_expect(!!(x), 1))
@@ -65,15 +66,6 @@ do {                                                                    \
     }                                                                   \
 } while (0)
 
-#define common_log_state_context(game_state, error, function_name, callable, start_msg, completed_msg) \
-while (true) {                                                                                         \
-    common_log(TRACE, "%s - State: %s", (function_name), (start_msg));                                 \
-    (error) = (callable)((game_state));                                                                \
-    common_check_assert_error((error), (function_name));                                               \
-    common_log(TRACE, "%s - State: %s", (function_name), (completed_msg));                             \
-    break; \
-}
-
 typedef enum {
     TRACE,
     DEBUG,
@@ -84,8 +76,13 @@ typedef enum {
     NONE,
 } common_log_e;
 
+#define GLOBAL_LOG_LEVEL 0
+#define ROLLING_FILE_LOG
+
 void
-common_log(common_log_e log_level, const char *fmt, ...);
+common_log_helper(FILE *stream, common_log_e log_level, const char *file_name, const char * function_name, int line_number, const char *fmt, ...);
+
+#define common_log(log_level, fmt, ...) common_log_helper(stderr, (log_level), __FILE__, __func__, __LINE__, (fmt), ##__VA_ARGS__)
 
 #endif // UTILS_COMMON_H_
 
