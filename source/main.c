@@ -28,10 +28,14 @@ rpg_game_init(rpg_game_state_t *gs inout())
     common_return_t error;
     using_rpg_ui_config_t(gs, ui_config);
     using_rpg_player_t(gs, player);
+    using_rpg_ui_state_t(gs, ui_state);
 
     gs->time_frame = 0.0f;
     ui_config->screen_height = 450;
     ui_config->screen_width = 800;
+
+    ui_state->current_gesture = GESTURE_NONE;
+    ui_state->mouse_position = rl.get_touch_position(0);
 
     error = rpg_player_init(player);
     if unlikely(common_get_error(error) != COMMON_OK) {
@@ -135,22 +139,20 @@ common_return_t
 rpg_game_running(rpg_game_state_t *gs inout())
 {
     using_rpg_player_t(gs, player);
+    using_rpg_ui_state_t(gs, ui_state);
+
     rl.init_window(gs->ui_config.screen_width, gs->ui_config.screen_height, "First Window");
     rl.set_target_fps(FRAME_RATE);
 
     Rectangle touch_area = {100, 100, 200, 50};
-    Vector2 touch_position = {0};
-    int current_gesture = GESTURE_NONE;
-    int last_gesture = GESTURE_NONE;
 
     char exp[128];
     char bought_str[128];
     int bought = 0;
     float price = 100.0f;
     while (!rl.window_should_close()) {
-        last_gesture = current_gesture;
-        current_gesture = rl.get_gesture_detected();
-        touch_position = rl.get_touch_position(0);
+        ui_state->mouse_position = rl.get_touch_position(0);
+        ui_state->current_gesture = rl.get_gesture_detected();
 
         // In game timer has passed
         gs->time_frame += rl.get_frame_time();
@@ -167,7 +169,7 @@ rpg_game_running(rpg_game_state_t *gs inout())
         sprintf(bought_str, "%d", bought);
         DrawText(exp, 100, 50, 24, DARKGRAY);
         DrawText(bought_str, 200, 50, 24, LIGHTGRAY);
-        rpg_button(touch_position, 100, 100, 200, 50, RED, NULL, BLACK, NULL, NULL);
+        rpg_button(ui_state->mouse_position, 100, 100, 200, 50, RED, NULL, BLACK, NULL, NULL);
         rl.end_drawing();
     }
 
