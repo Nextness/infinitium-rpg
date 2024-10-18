@@ -15,6 +15,7 @@ typedef struct {
 
     // UI Object functions
     void (*draw_rectangle)(int, int, int, int, Color);
+    void (*draw_rectangle_rec)(Rectangle, Color);
 
     // Interactions
     int (*get_gesture_detected)(void);
@@ -35,7 +36,8 @@ typedef struct {
     .close_window = CloseWindow
 
 #define rl_ui_object_functions       \
-    .draw_rectangle = DrawRectangle
+    .draw_rectangle = DrawRectangle, \
+    .draw_rectangle_rec = DrawRectangleRec
 
 #define rl_interaction_functions                        \
     .get_gesture_detected = GetGestureDetected,         \
