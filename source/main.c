@@ -11,6 +11,7 @@
 #include "ui_config.h"
 #include "utils_common.h"
 #include "ui_config.c"
+#include "ui_components.h"
 #include "wrapper.h"
 
 #define FRAME_RATE 60
@@ -20,7 +21,7 @@ common_return_t
 rpg_game_setup(rpg_game_state_t *gs inout())
 {
     (void)gs;
-    rl.set_trace_log_level(LOG_NONE);
+    rl_set_trace_log_level(LOG_NONE);
     return common_set_return(COMMON_OK, NULL);
 }
 
@@ -37,7 +38,7 @@ rpg_game_init(rpg_game_state_t *gs inout())
     ui_config->screen_width = 800;
 
     ui_state->current_gesture = GESTURE_NONE;
-    ui_state->mouse_position = rl.get_touch_position(0);
+    ui_state->mouse_position = rl_get_touch_position(0);
 
     error = rpg_player_init(player);
     if unlikely(common_get_error(error) != COMMON_OK) {
@@ -114,35 +115,6 @@ rpg_game_logic_loop(rpg_game_state_t *gs inout())
     return common_set_return(COMMON_OK, NULL);
 }
 
-typedef bool (*common_callback_f)(rpg_game_state_t *gs inout());
-
-common_return_t
-rpg_button(Vector2 mouse_position in(),
-           Rectangle button_area in(),
-           Color button_color in(),
-           int border_width in(),
-           Color border_color in(),
-           char *text in(),
-           rpg_game_state_t *gs inout(),
-           common_callback_f can_buy_upgrade in())
-{
-    Color current_button_color = button_color;
-    Color tint = {0};
-    if (rl.check_collision_point_rec(mouse_position, button_area)) {
-        int current_gesture = rl.get_gesture_detected();
-        if ((current_gesture == GESTURE_TAP || current_gesture == GESTURE_HOLD) && can_buy_upgrade(gs)) {
-            tint = (Color){164, 164, 164, 255};
-        } else {
-            tint = (Color){216, 216, 216, 255};
-        }
-        current_button_color = ColorAlphaBlend(current_button_color, button_color, tint);
-    } else {
-        current_button_color = button_color;
-    }
-    rl.draw_rectangle_rec(button_area, current_button_color);
-    return common_set_return(COMMON_OK, NULL);
-}
-
 common_return_t
 rpg_game_running(rpg_game_state_t *gs inout())
 {
@@ -150,38 +122,40 @@ rpg_game_running(rpg_game_state_t *gs inout())
     using_rpg_ui_config_t(gs, ui_config);
     using_rpg_ui_state_t(gs, ui_state);
 
-    rl.init_window(ui_config->screen_width, ui_config->screen_height, "First Window");
-    rl.set_target_fps(FRAME_RATE);
+    rl_init_window(ui_config->screen_width, ui_config->screen_height, 
+                   "Infinitium RPG - Incremental Game");
+    rl_set_target_fps(FRAME_RATE);
 
-    Rectangle touch_area = {100, 100, 200, 50};
 
     char exp[128];
     char bought_str[128];
     int bought = 0;
-    float price = 100.0f;
-    while (!rl.window_should_close()) {
-        ui_state->mouse_position = rl.get_touch_position(0);
-        ui_state->current_gesture = rl.get_gesture_detected();
+    uic_button_config_t btn = {
+        (rl_rectangle_t){100, 100, 200, 50}, RED, NULL, BLACK, NULL
+    };
+    while (!rl_window_should_close()) {
+        ui_state->mouse_position = rl_get_touch_position(0);
+        ui_state->current_gesture = rl_get_gesture_detected();
 
         // In game timer has passed
-        gs->time_frame += rl.get_frame_time();
+        gs->time_frame += rl_get_frame_time();
         if likely(gs->time_frame >= 1.0f) {
             rpg_game_logic_loop(gs);
             gs->time_frame = 0.0f;
         }
 
         // Drawing the game
-        rl.begin_drawing();
-        rl.clear_background(RAYWHITE);
+        rl_begin_drawing();
+        rl_clear_background(RAYWHITE);
         sprintf(exp, "%.2f", player->current_exp);
         sprintf(bought_str, "%d", bought);
         DrawText(exp, 100, 50, 24, DARKGRAY);
         DrawText(bought_str, 200, 50, 24, LIGHTGRAY);
-        rpg_button(ui_state->mouse_position, (Rectangle){ 100, 100, 200, 50}, RED, NULL, BLACK, NULL, NULL, NULL);
-        rl.end_drawing();
+        uic_button(ui_state->mouse_position, btn, gs, &buy_upgrade);
+        rl_end_drawing();
     }
+    rl_close_window();
 
-    rl.close_window();
     return common_set_return(COMMON_OK, NULL);
 }
 

@@ -80,9 +80,11 @@ typedef enum {
 #define ROLLING_FILE_LOG
 
 void
-common_log_helper(FILE *stream, common_log_e log_level, const char *file_name, const char * function_name, int line_number, const char *fmt, ...);
+common_log_helper(FILE *stream, common_log_e log_level, const char *file_name,
+                  const char * function_name, int line_number, const char *fmt, ...);
 
-#define common_log(log_level, fmt, ...) common_log_helper(stderr, (log_level), __FILE__, __func__, __LINE__, (fmt), ##__VA_ARGS__)
+#define common_log(log_level, fmt, ...) \
+    common_log_helper(stderr, (log_level), __FILE__, __func__, __LINE__, (fmt), ##__VA_ARGS__)
 
 #endif // UTILS_COMMON_H_
 
