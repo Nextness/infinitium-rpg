@@ -5,6 +5,7 @@
 #include <gmp.h>
 #include <raylib.h>
 #include <time.h>
+#include <math.h>
 
 #include "player.h"
 #include "game_state.h"
@@ -21,6 +22,7 @@ common_return_t
 rpg_game_setup(rpg_game_state_t *gs inout())
 {
     (void)gs;
+    SetConfigFlags(FLAG_MSAA_4X_HINT);
     rl_set_trace_log_level(LOG_NONE);
     return common_set_return(COMMON_OK, NULL);
 }
@@ -70,10 +72,7 @@ exp_progress_tracker(rpg_player_t *player inout())
     float max_exp = player->max_exp - player->previous_exp_requirement;
     float current_exp = player->current_exp - player->previous_exp_requirement;
     float result = 1 - (max_exp - current_exp) / max_exp;
-    if unlikely(result <= 0.0f) {
-        player->exp_percentage = 0.0f;
-        return common_set_return(COMMON_ERROR, "Value cannot be less than or equal to '0'\n");
-    }
+    if (result < 0.0f) result = 0.0f;
     player->exp_percentage = result;
     return common_set_return(COMMON_OK, NULL);
 }
@@ -84,7 +83,14 @@ rpg_game_logic_loop(rpg_game_state_t *gs inout())
     common_return_t error;
     using_rpg_player_t(gs, player);
 
-    player->current_exp += 10.0f;
+    player->current_exp += 1.0f;
+    if (player->upgrades.first_upgrade > 0) {
+        player->current_exp += player->upgrades.first_upgrade * 10.0f;
+    }
+
+    if (player->upgrades.second_upgrade > 0) {
+        player->current_exp += player->upgrades.second_upgrade * 30.0f;
+    }
 
     error = exp_progress_tracker(player);
     if unlikely(common_get_error(error) != COMMON_OK) {
@@ -122,17 +128,23 @@ rpg_game_running(rpg_game_state_t *gs inout())
     using_rpg_ui_config_t(gs, ui_config);
     using_rpg_ui_state_t(gs, ui_state);
 
-    rl_init_window(ui_config->screen_width, ui_config->screen_height, 
-                   "Infinitium RPG - Incremental Game");
-    rl_set_target_fps(FRAME_RATE);
-
 
     char exp[128];
     char bought_str[128];
     int bought = 0;
+    common_return_t error;
     uic_button_config_t btn = {
-        (rl_rectangle_t){100, 100, 200, 50}, RED, NULL, BLACK, NULL
+        (rl_rectangle_t){100, 100, 200, 50}, BLUE, 4, DARKBLUE, "Hello World", BLACK, 16,
+        "upgd-1"
     };
+    uic_button_config_t btn2 = {
+        (rl_rectangle_t){100, 200, 200, 50}, RED, 4, BLACK, "Hello World", BLACK, 16,
+        "updg-2"
+    };
+
+    rl_set_target_fps(FRAME_RATE);
+    rl_init_window(ui_config->screen_width, ui_config->screen_height, 
+                   "Infinitium RPG - Incremental Game");
     while (!rl_window_should_close()) {
         ui_state->mouse_position = rl_get_touch_position(0);
         ui_state->current_gesture = rl_get_gesture_detected();
@@ -147,11 +159,21 @@ rpg_game_running(rpg_game_state_t *gs inout())
         // Drawing the game
         rl_begin_drawing();
         rl_clear_background(RAYWHITE);
-        sprintf(exp, "%.2f", player->current_exp);
-        sprintf(bought_str, "%d", bought);
+        sprintf(exp, "Current Exp: %.2f", player->current_exp);
+        sprintf(bought_str, "Upagrade 1: %d", player->upgrades.first_upgrade);
         DrawText(exp, 100, 50, 24, DARKGRAY);
-        DrawText(bought_str, 200, 50, 24, LIGHTGRAY);
-        uic_button(ui_state->mouse_position, btn, gs, &buy_upgrade);
+        DrawText(bought_str, 500, 50, 24, LIGHTGRAY);
+
+        error = uic_button(ui_state->mouse_position, btn, gs, &buy_upgrade_1);
+        if unlikely(common_get_error(error) != COMMON_OK) {
+            common_log(ERROR, "Failed to execute de upgrade button");
+        }
+
+        error = uic_button(ui_state->mouse_position, btn2, gs, &buy_upgrade_2);
+        if unlikely(common_get_error(error) != COMMON_OK) {
+            common_log(ERROR, "Failed to execute de upgrade button");
+        }
+
         rl_end_drawing();
     }
     rl_close_window();

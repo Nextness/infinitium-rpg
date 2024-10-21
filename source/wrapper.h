@@ -20,6 +20,8 @@
 // UI Object functions
 #define rl_draw_rectangle DrawRectangle
 #define rl_draw_rectangle_rec DrawRectangleRec
+#define rl_draw_rectangle_rounded DrawRectangleRounded
+#define rl_draw_text DrawText
 
 // Interactions
 #define rl_get_gesture_detected GetGestureDetected

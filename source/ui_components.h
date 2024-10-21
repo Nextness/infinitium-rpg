@@ -8,11 +8,14 @@
 #include "wrapper.h"
 
 typedef struct {
-    Rectangle button_area;
-    Color button_color;
+    rl_rectangle_t button_area;
+    rl_color_t button_color;
     int border_width;
-    Color border_color;
+    rl_color_t border_color;
     char *button_text;
+    rl_color_t button_text_color;
+    int button_text_size;
+    char button_id[16];
 } uic_button_config_t;
 
 common_return_t
