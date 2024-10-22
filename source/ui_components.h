@@ -3,7 +3,6 @@
 
 #include <raylib.h>
 #include "utils_common.h"
-#include "game_state.h"
 #include "callbacks.h"
 #include "wrapper.h"
 
@@ -17,6 +16,8 @@ typedef struct {
     int button_text_size;
     char button_id[16];
 } uic_button_config_t;
+
+struct rpg_game_state_t;
 
 common_return_t
 uic_button(rl_vector2_t mouse_position in(), uic_button_config_t button in(),

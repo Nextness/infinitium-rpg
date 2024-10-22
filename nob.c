@@ -27,7 +27,8 @@ main(int argc, char **argv)
     Nob_Cmd cmd = {0};
     nob_cmd_append(&cmd, "gcc", "-DDEVELOPER_BUILD", "-O3");
     nob_cmd_append(&cmd, "./source/main.c", "./source/rpg_common.c", "./source/utils_common.c",
-                         "./source/player.c", "./source/ui_components.c", "./source/callbacks.c");
+                         "./source/player.c", "./source/ui_components.c", "./source/callbacks.c",
+                         "./source/ui_state.c");
     nob_cmd_append(&cmd, "-o", bin_location);
     nob_cmd_append(&cmd, "-Wall", "-Wextra", "-lraylib", "-lGL", "-lm", "-pthread", "-ldl", "-lgmp");
     if (!nob_cmd_run_sync_and_reset(&cmd)) return 1;

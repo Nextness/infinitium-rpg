@@ -5,7 +5,6 @@
 #include <gmp.h>
 #include <raylib.h>
 #include <time.h>
-#include <math.h>
 
 #include "player.h"
 #include "game_state.h"
@@ -22,7 +21,7 @@ common_return_t
 rpg_game_setup(rpg_game_state_t *gs inout())
 {
     (void)gs;
-    SetConfigFlags(FLAG_MSAA_4X_HINT);
+    rl_set_config_flags(FLAG_MSAA_4X_HINT);
     rl_set_trace_log_level(LOG_NONE);
     return common_set_return(COMMON_OK, NULL);
 }
@@ -31,29 +30,28 @@ common_return_t
 rpg_game_init(rpg_game_state_t *gs inout())
 {
     common_return_t error;
-    using_rpg_ui_config_t(gs, ui_config);
-    using_rpg_player_t(gs, player);
-    using_rpg_ui_state_t(gs, ui_state);
-
     gs->time_frame = 0.0f;
-    ui_config->screen_height = 450;
-    ui_config->screen_width = 800;
 
-    ui_state->current_gesture = GESTURE_NONE;
-    ui_state->mouse_position = rl_get_touch_position(0);
-
-    error = rpg_player_init(player);
+    using_rpg_ui_config_t(gs, ui_config);
+    error = ui_init_set_config(ui_config);
     if unlikely(common_get_error(error) != COMMON_OK) {
-        common_log(ERROR, "Failed to initialization of the player...");
+        common_log(ERROR, "Failed to initialize the UI config...");
         return error;
     }
 
-#ifdef DEVELOPER_BUILD
-    common_log(DEBUG, "Initial player status:");
-    common_log(DEBUG, "Current level: %d", player->current_level);
-    common_log(DEBUG, "Current EXP %f | Previous required exp %f | max_exp %f",
-               player->current_exp, player->previous_exp_requirement, player->max_exp);
-#endif
+    using_rpg_ui_state_t(gs, ui_state);
+    error = ui_state_init_config(ui_state);
+    if unlikely(common_get_error(error) != COMMON_OK) {
+        common_log(ERROR, "Failed to initialize the UI state...");
+        return error;
+    }
+
+    using_rpg_player_t(gs, player);
+    error = rpg_player_init(player);
+    if unlikely(common_get_error(error) != COMMON_OK) {
+        common_log(ERROR, "Failed to initialize the player...");
+        return error;
+    }
 
     return common_set_return(COMMON_OK, NULL);
 }
@@ -98,12 +96,6 @@ rpg_game_logic_loop(rpg_game_state_t *gs inout())
         return error;
     }
 
-#ifdef DEVELOPER_BUILD
-    common_log(DEBUG, "Current level: %d", player->current_level);
-    common_log(DEBUG, "Current EXP %f | Previous required exp %f | max_exp %f",
-               player->current_exp, player->previous_exp_requirement, player->max_exp);
-#endif
-
     if (player->exp_percentage >= 1.0f) {
         common_clamp_min(player->exp_percentage, 1.0f);
         error = next_exp_bump(player->current_level++, &player->previous_exp_requirement);
@@ -131,19 +123,10 @@ rpg_game_running(rpg_game_state_t *gs inout())
 
     char exp[128];
     char bought_str[128];
-    int bought = 0;
     common_return_t error;
-    uic_button_config_t btn = {
-        (rl_rectangle_t){100, 100, 200, 50}, BLUE, 4, DARKBLUE, "Hello World", BLACK, 16,
-        "upgd-1"
-    };
-    uic_button_config_t btn2 = {
-        (rl_rectangle_t){100, 200, 200, 50}, RED, 4, BLACK, "Hello World", BLACK, 16,
-        "updg-2"
-    };
 
     rl_set_target_fps(FRAME_RATE);
-    rl_init_window(ui_config->screen_width, ui_config->screen_height, 
+    rl_init_window(ui_config->screen_width, ui_config->screen_height,
                    "Infinitium RPG - Incremental Game");
     while (!rl_window_should_close()) {
         ui_state->mouse_position = rl_get_touch_position(0);
@@ -164,12 +147,12 @@ rpg_game_running(rpg_game_state_t *gs inout())
         DrawText(exp, 100, 50, 24, DARKGRAY);
         DrawText(bought_str, 500, 50, 24, LIGHTGRAY);
 
-        error = uic_button(ui_state->mouse_position, btn, gs, &buy_upgrade_1);
+        error = uic_button(ui_state->mouse_position, gs->ui_state.buttons[0], gs, &buy_upgrade_1);
         if unlikely(common_get_error(error) != COMMON_OK) {
             common_log(ERROR, "Failed to execute de upgrade button");
         }
 
-        error = uic_button(ui_state->mouse_position, btn2, gs, &buy_upgrade_2);
+        error = uic_button(ui_state->mouse_position, gs->ui_state.buttons[1], gs, &buy_upgrade_2);
         if unlikely(common_get_error(error) != COMMON_OK) {
             common_log(ERROR, "Failed to execute de upgrade button");
         }

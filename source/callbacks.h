@@ -1,7 +1,7 @@
 #ifndef CALLBACKS_H_
 #define CALLBACKS_H_
 
-#include "game_state.h"
+typedef struct rpg_game_state_t rpg_game_state_t;
 
 typedef bool (*callback_t)(rpg_game_state_t *gs);
 

@@ -12,6 +12,7 @@
 #define rl_clear_background ClearBackground
 #define rl_end_drawing EndDrawing
 #define rl_close_window CloseWindow
+#define rl_set_config_flags SetConfigFlags
 
 // Utils
 #define rl_get_frame_time GetFrameTime
