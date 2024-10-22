@@ -18,7 +18,7 @@
 #define MAX_BUILDINGS 100
 
 common_return_t
-rpg_game_setup(rpg_game_state_t *gs inout())
+rpg_game_setup(rpg_game_state_t *gs inout() nullable())
 {
     (void)gs;
     rl_set_config_flags(FLAG_MSAA_4X_HINT);
@@ -27,7 +27,7 @@ rpg_game_setup(rpg_game_state_t *gs inout())
 }
 
 common_return_t
-rpg_game_init(rpg_game_state_t *gs inout())
+rpg_game_init(rpg_game_state_t *gs inout() nullable())
 {
     common_return_t error;
     gs->time_frame = 0.0f;
@@ -67,6 +67,15 @@ next_exp_bump(int next_level in(), float *result out())
 common_return_t
 exp_progress_tracker(rpg_player_t *player inout())
 {
+
+#ifdef DEVELOPER_BUILD
+    if unlikely(player == NULL) {
+        return common_set_return(COMMON_ERROR,
+                                 "Failed at exp_progress_tracker because player "
+                                 "is NULL where it shouldn't...");
+    }
+#endif
+
     float max_exp = player->max_exp - player->previous_exp_requirement;
     float current_exp = player->current_exp - player->previous_exp_requirement;
     float result = 1 - (max_exp - current_exp) / max_exp;
@@ -78,6 +87,15 @@ exp_progress_tracker(rpg_player_t *player inout())
 common_return_t
 rpg_game_logic_loop(rpg_game_state_t *gs inout())
 {
+
+#ifdef DEVELOPER_BUILD
+    if unlikely(gs == NULL) {
+        return common_set_return(COMMON_ERROR,
+                                 "Failed at rpg_game_logic_loop because "
+                                 "gamestate is NULL where it shouldn't...");
+    }
+#endif
+
     common_return_t error;
     using_rpg_player_t(gs, player);
 
@@ -116,14 +134,22 @@ rpg_game_logic_loop(rpg_game_state_t *gs inout())
 common_return_t
 rpg_game_running(rpg_game_state_t *gs inout())
 {
+
+#ifdef DEVELOPER_BUILD
+    if unlikely(gs == NULL) {
+        return common_set_return(COMMON_ERROR,
+                                 "Failed at rpg_game_running because "
+                                 "gamestate is NULL where it shouldn't...");
+    }
+#endif
+
     using_rpg_player_t(gs, player);
     using_rpg_ui_config_t(gs, ui_config);
     using_rpg_ui_state_t(gs, ui_state);
-
+    common_return_t error;
 
     char exp[128];
     char bought_str[128];
-    common_return_t error;
 
     rl_set_target_fps(FRAME_RATE);
     rl_init_window(ui_config->screen_width, ui_config->screen_height,
@@ -149,12 +175,16 @@ rpg_game_running(rpg_game_state_t *gs inout())
 
         error = uic_button(ui_state->mouse_position, gs->ui_state.buttons[0], gs, &buy_upgrade_1);
         if unlikely(common_get_error(error) != COMMON_OK) {
-            common_log(ERROR, "Failed to execute de upgrade button");
+            common_log(ERROR,
+                       "Failed to execute/render thee upgrade button number %d - reason: %s",
+                       gs->ui_state.buttons[0], common_get_error_msg(error));
         }
 
         error = uic_button(ui_state->mouse_position, gs->ui_state.buttons[1], gs, &buy_upgrade_2);
         if unlikely(common_get_error(error) != COMMON_OK) {
-            common_log(ERROR, "Failed to execute de upgrade button");
+            common_log(ERROR,
+                       "Failed to execute/render thee upgrade button number %d - reason: %s",
+                       gs->ui_state.buttons[0], common_get_error_msg(error));
         }
 
         rl_end_drawing();
@@ -168,6 +198,15 @@ rpg_game_running(rpg_game_state_t *gs inout())
 common_return_t
 rpg_game_deinit(rpg_game_state_t *gs inout())
 {
+
+#ifdef DEVELOPER_BUILD
+    if unlikely(gs == NULL) {
+        return common_set_return(COMMON_ERROR,
+                                 "Failed at rpg_game_deinit because "
+                                 "gamestate is NULL where it shouldn't...");
+    }
+#endif
+
     (void)gs;
     return common_set_return(COMMON_OK, NULL);
 }
@@ -175,6 +214,15 @@ rpg_game_deinit(rpg_game_state_t *gs inout())
 common_return_t
 rpg_game_shutdown(rpg_game_state_t *gs inout())
 {
+
+#ifdef DEVELOPER_BUILD
+    if unlikely(gs == NULL) {
+        return common_set_return(COMMON_ERROR,
+                                 "Failed at rpg_game_shutdown because "
+                                 "gamestate is NULL where it shouldn't...");
+    }
+#endif
+
     (void)gs;
     return common_set_return(COMMON_OK, NULL);
 }
