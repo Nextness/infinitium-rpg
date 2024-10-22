@@ -23,7 +23,7 @@ rpg_game_setup(rpg_game_state_t *gs inout() nullable())
     (void)gs;
     rl_set_config_flags(FLAG_MSAA_4X_HINT);
     rl_set_trace_log_level(LOG_NONE);
-    return common_set_return(COMMON_OK, NULL);
+    return common_set_return(COMMON_OK, NULL, NULL);
 }
 
 common_return_t
@@ -53,7 +53,7 @@ rpg_game_init(rpg_game_state_t *gs inout() nullable())
         return error;
     }
 
-    return common_set_return(COMMON_OK, NULL);
+    return common_set_return(COMMON_OK, NULL, NULL);
 }
 
 common_return_t
@@ -61,7 +61,7 @@ next_exp_bump(int next_level in(), float *result out())
 {
     const int minimum_exp = 100;
     *result += (float)(10 * next_level + minimum_exp);
-    return common_set_return(COMMON_OK, NULL);
+    return common_set_return(COMMON_OK, NULL, NULL);
 }
 
 common_return_t
@@ -72,7 +72,8 @@ exp_progress_tracker(rpg_player_t *player inout())
     if unlikely(player == NULL) {
         return common_set_return(COMMON_ERROR,
                                  "Failed at exp_progress_tracker because player "
-                                 "is NULL where it shouldn't...");
+                                 "is NULL where it shouldn't...",
+                                 NULL);
     }
 #endif
 
@@ -81,7 +82,7 @@ exp_progress_tracker(rpg_player_t *player inout())
     float result = 1 - (max_exp - current_exp) / max_exp;
     if (result < 0.0f) result = 0.0f;
     player->exp_percentage = result;
-    return common_set_return(COMMON_OK, NULL);
+    return common_set_return(COMMON_OK, NULL, NULL);
 }
 
 common_return_t
@@ -92,7 +93,8 @@ rpg_game_logic_loop(rpg_game_state_t *gs inout())
     if unlikely(gs == NULL) {
         return common_set_return(COMMON_ERROR,
                                  "Failed at rpg_game_logic_loop because "
-                                 "gamestate is NULL where it shouldn't...");
+                                 "gamestate is NULL where it shouldn't...",
+                                 NULL);
     }
 #endif
 
@@ -128,7 +130,7 @@ rpg_game_logic_loop(rpg_game_state_t *gs inout())
             return error;
         }
     }
-    return common_set_return(COMMON_OK, NULL);
+    return common_set_return(COMMON_OK, NULL, NULL);
 }
 
 common_return_t
@@ -139,7 +141,8 @@ rpg_game_running(rpg_game_state_t *gs inout())
     if unlikely(gs == NULL) {
         return common_set_return(COMMON_ERROR,
                                  "Failed at rpg_game_running because "
-                                 "gamestate is NULL where it shouldn't...");
+                                 "gamestate is NULL where it shouldn't...",
+                                 NULL);
     }
 #endif
 
@@ -191,7 +194,7 @@ rpg_game_running(rpg_game_state_t *gs inout())
     }
     rl_close_window();
 
-    return common_set_return(COMMON_OK, NULL);
+    return common_set_return(COMMON_OK, NULL, NULL);
 }
 
 
@@ -203,12 +206,13 @@ rpg_game_deinit(rpg_game_state_t *gs inout())
     if unlikely(gs == NULL) {
         return common_set_return(COMMON_ERROR,
                                  "Failed at rpg_game_deinit because "
-                                 "gamestate is NULL where it shouldn't...");
+                                 "gamestate is NULL where it shouldn't...",
+                                 NULL);
     }
 #endif
 
     (void)gs;
-    return common_set_return(COMMON_OK, NULL);
+    return common_set_return(COMMON_OK, NULL, NULL);
 }
 
 common_return_t
@@ -219,12 +223,13 @@ rpg_game_shutdown(rpg_game_state_t *gs inout())
     if unlikely(gs == NULL) {
         return common_set_return(COMMON_ERROR,
                                  "Failed at rpg_game_shutdown because "
-                                 "gamestate is NULL where it shouldn't...");
+                                 "gamestate is NULL where it shouldn't...",
+                                 NULL);
     }
 #endif
 
     (void)gs;
-    return common_set_return(COMMON_OK, NULL);
+    return common_set_return(COMMON_OK, NULL, NULL);
 }
 
 int

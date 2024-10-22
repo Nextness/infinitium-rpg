@@ -13,6 +13,6 @@ rpg_player_init(rpg_player_t *player inout())
     player->previous_exp_requirement = 0.0f;
     player->upgrades.first_upgrade = 0;
     player->upgrades.second_upgrade = 0;
-    return common_set_return(COMMON_OK, NULL);
+    return common_set_return(COMMON_OK, NULL, NULL);
 }
 

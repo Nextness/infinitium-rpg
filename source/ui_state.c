@@ -31,5 +31,5 @@ ui_state_init_config(rpg_ui_state_t *ui_state)
         .button_id = "upgd-2"
     };
 
-    return common_set_return(COMMON_OK, NULL);
+    return common_set_return(COMMON_OK, NULL, NULL);
 }

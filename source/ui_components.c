@@ -44,6 +44,6 @@ draw_button_l:
              button.button_area.y + button.button_area.height / 2,
              button.button_text_size,
              button.button_text_color);
-    return common_set_return(COMMON_OK, NULL);
+    return common_set_return(COMMON_OK, NULL, NULL);
 }
 

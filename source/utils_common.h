@@ -50,12 +50,15 @@ typedef enum {
 
 typedef struct {
     common_result_e res;
-    char *error_msg nullable();
+    char *dev_error_msg nullable();
+    char *user_error_msg nullable();
 } common_return_t;
 
-#define common_set_return(common, error) ((common_return_t) { (common), (error) nullable() })
+#define common_set_return(common, dev_error_msg, user_error_msg) \
+    ((common_return_t) { (common), (dev_error_msg) nullable(), (user_error_msg) nullable() })
 #define common_get_error(common_return_t) (common_return_t).res
-#define common_get_error_msg(common_return_t) (common_return_t).error_msg
+#define common_get_error_msg(common_return_t) (common_return_t).dev_error_msg
+#define common_get_user_error_msg(common_return_t) (common_return_t).user_error_msg
 
 #define common_check_assert_error(common_return_t, failed_at)           \
 do {                                                                    \
