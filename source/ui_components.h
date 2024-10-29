@@ -21,7 +21,7 @@ struct rpg_game_state_t;
 
 common_return_t
 uic_button(rl_vector2_t mouse_position in(), uic_button_config_t button in(),
-           rpg_game_state_t *gs inout(), callback_t callback in());
+           rpg_game_state_t *gs inout(), callback_t callback in(), callback_t on_change in());
 
 #endif // UI_COMPONENTS_H_
 

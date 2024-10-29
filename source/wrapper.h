@@ -28,6 +28,7 @@
 #define rl_get_gesture_detected GetGestureDetected
 #define rl_get_touch_position GetTouchPosition
 #define rl_check_collision_point_rec CheckCollisionPointRec
+#define rl_is_mouse_button_pressed IsMouseButtonPressed
 #define rl_is_mouse_button_released IsMouseButtonReleased
 
 // Structs

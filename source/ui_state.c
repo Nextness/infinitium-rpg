@@ -14,7 +14,7 @@ ui_state_init_config(rpg_ui_state_t *ui_state)
         .button_area = (rl_rectangle_t) {100, 100, 200, 50},
         .button_color = BLUE,
         .border_width = 4,
-        .border_color = DARKBLUE,
+        .border_color = BLACK,
         .button_text = "Hello World",
         .button_text_color = BLACK,
         .button_text_size = 16,

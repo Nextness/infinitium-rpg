@@ -176,14 +176,16 @@ rpg_game_running(rpg_game_state_t *gs inout())
         DrawText(exp, 100, 50, 24, DARKGRAY);
         DrawText(bought_str, 500, 50, 24, LIGHTGRAY);
 
-        error = uic_button(ui_state->mouse_position, gs->ui_state.buttons[0], gs, &buy_upgrade_1);
+        error = uic_button(ui_state->mouse_position, gs->ui_state.buttons[0], gs,
+                               &buy_upgrade_1, &on_change_upgrade_1);
         if unlikely(common_get_error(error) != COMMON_OK) {
             common_log(ERROR,
                        "Failed to execute/render thee upgrade button number %d - reason: %s",
                        gs->ui_state.buttons[0], common_get_error_msg(error));
         }
 
-        error = uic_button(ui_state->mouse_position, gs->ui_state.buttons[1], gs, &buy_upgrade_2);
+        error = uic_button(ui_state->mouse_position, gs->ui_state.buttons[1], gs,
+                               &buy_upgrade_2, &on_change_upgrade_2);
         if unlikely(common_get_error(error) != COMMON_OK) {
             common_log(ERROR,
                        "Failed to execute/render thee upgrade button number %d - reason: %s",
