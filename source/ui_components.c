@@ -7,13 +7,11 @@
 #include "callbacks.h"
 #include "wrapper.h"
 
-// common_return_t
-// uic_button(rl_vector2_t mouse_position in(), uic_button_config_t button in(),
-           // rpg_game_state_t *gs inout(), callback_t on_click in(), callback_t on_change in())
 common_return_t
 uic_button(rpg_game_state_t *gs inout(), int index)
 {
     using_rpg_ui_state_t(gs, ui_state);
+
     uic_button_config_t *button = &gs->ui_state.buttons[index];
     rl_vector3_t btn_color_hsv = ColorToHSV(button->button_color);
     rl_vector3_t border_color_hsv = ColorToHSV(button->border_color);

@@ -6,7 +6,6 @@
 #include "ui_config.h"
 #include "ui_state.h"
 #include "player.h"
-#include "wrapper.h"
 
 typedef struct rpg_game_state_t {
     float time_frame;

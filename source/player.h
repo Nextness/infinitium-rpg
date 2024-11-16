@@ -25,12 +25,6 @@ typedef struct {
     mpf_t exp_percetage_adv;
     mpf_t previous_exp_requirement_adv;
     mpf_t current_level_adv;
-    // normal
-    // float current_exp;
-    // float max_exp;
-    // float exp_percentage;
-    // float previous_exp_requirement;
-    // int current_level;
 
     // Upgrades
     rpg_bought_upgrades_t upgrades;
