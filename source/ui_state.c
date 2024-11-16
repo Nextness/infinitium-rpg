@@ -2,6 +2,7 @@
 
 #include "utils_common.h"
 #include "ui_state.h"
+#include "callbacks.h"
 #include "wrapper.h"
 
 common_return_t
@@ -18,7 +19,9 @@ ui_state_init_config(rpg_ui_state_t *ui_state)
         .button_text = "Hello World",
         .button_text_color = BLACK,
         .button_text_size = 16,
-        .button_id = "upgd-1"
+        .button_id = "upgd-1",
+        .on_change = on_change_upgrade_1_adv,
+        .callback = buy_upgrade_1_adv,
     };
     ui_state->buttons[1] = (uic_button_config_t) {
         .button_area = (rl_rectangle_t) {100, 200, 200, 50},
@@ -28,7 +31,9 @@ ui_state_init_config(rpg_ui_state_t *ui_state)
         .button_text = "Hello World",
         .button_text_color = BLACK,
         .button_text_size = 16,
-        .button_id = "upgd-2"
+        .button_id = "upgd-2",
+        .on_change = on_change_upgrade_2_adv,
+        .callback = buy_upgrade_2_adv,
     };
 
     return common_set_return(COMMON_OK, NULL, NULL);

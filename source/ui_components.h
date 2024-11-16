@@ -2,6 +2,7 @@
 #define UI_COMPONENTS_H_
 
 #include <raylib.h>
+
 #include "utils_common.h"
 #include "callbacks.h"
 #include "wrapper.h"
@@ -15,13 +16,14 @@ typedef struct {
     rl_color_t button_text_color;
     int button_text_size;
     char button_id[16];
+    callback_t callback;
+    callback_t on_change;
 } uic_button_config_t;
 
 struct rpg_game_state_t;
 
 common_return_t
-uic_button(rl_vector2_t mouse_position in(), uic_button_config_t button in(),
-           rpg_game_state_t *gs inout(), callback_t callback in(), callback_t on_change in());
+uic_button(rpg_game_state_t *gs inout(), int index);
 
 #endif // UI_COMPONENTS_H_
 

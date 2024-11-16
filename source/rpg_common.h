@@ -37,7 +37,7 @@ rpg_common_vitality_regen_t rpg_common_vitality_regen_init_set(
 );
 
 typedef enum {
-    MELEE    =           0b1,
+    MELEE    =             1,
     MAGIC    = MELEE    << 1,
     DISTANCE = MAGIC    << 1,
     SUPPORT  = DISTANCE << 1,

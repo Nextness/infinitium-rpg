@@ -5,10 +5,12 @@
 #include <gmp.h>
 #include <raylib.h>
 #include <time.h>
+#include <assert.h>
 
 #include "player.h"
 #include "game_state.h"
 #include "ui_config.h"
+#include "ui_state.h"
 #include "utils_common.h"
 #include "ui_config.c"
 #include "ui_components.h"
@@ -16,121 +18,81 @@
 
 #define FRAME_RATE 60
 #define MAX_BUILDINGS 100
+#define ERROR_FMT "Failed to %s - reason: %s"
 
 common_return_t
-rpg_game_setup(rpg_game_state_t *gs inout() nullable())
+rpg_game_setup(rpg_game_state_t *gs inout())
 {
     (void)gs;
     rl_set_config_flags(FLAG_MSAA_4X_HINT);
     rl_set_trace_log_level(LOG_NONE);
+    rl_set_target_fps(FRAME_RATE);
     return common_set_return(COMMON_OK, NULL, NULL);
 }
 
 common_return_t
-rpg_game_init(rpg_game_state_t *gs inout() nullable())
+rpg_game_init(rpg_game_state_t *gs inout())
 {
-    common_return_t error;
+    common_set_defer();
+
     gs->time_frame = 0.0f;
 
     using_rpg_ui_config_t(gs, ui_config);
-    error = ui_init_set_config(ui_config);
-    if unlikely(common_get_error(error) != COMMON_OK) {
-        common_log(ERROR, "Failed to initialize the UI config...");
-        return error;
+    unlikely_error(ui_init_set_config(ui_config)) {
+        common_log(ERROR, ERROR_FMT, "initialize the UI config", common_get_error_msg(error));
+        common_defer;
     }
 
     using_rpg_ui_state_t(gs, ui_state);
-    error = ui_state_init_config(ui_state);
-    if unlikely(common_get_error(error) != COMMON_OK) {
-        common_log(ERROR, "Failed to initialize the UI state...");
-        return error;
+    unlikely_error(ui_state_init_config(ui_state)) {
+        common_log(ERROR, ERROR_FMT, "initialize the UI state", common_get_error_msg(error));
+        common_defer;
     }
 
     using_rpg_player_t(gs, player);
-    error = rpg_player_init(player);
-    if unlikely(common_get_error(error) != COMMON_OK) {
-        common_log(ERROR, "Failed to initialize the player...");
-        return error;
+    unlikely_error(rpg_player_init(player)) {
+        common_log(ERROR, ERROR_FMT, "initialize the player", common_get_error_msg(error));
+        common_defer;
     }
 
-    return common_set_return(COMMON_OK, NULL, NULL);
+    unlikely_error(rpg_player_update_display_info(player)) {
+        common_log(ERROR, ERROR_FMT, "update display information during initialization",
+                   common_get_error_msg(error));
+        common_defer;
+    }
+
+    common_return;
 }
 
 common_return_t
-next_exp_bump(int next_level in(), float *result out())
+rpg_game_logic_step(rpg_game_state_t *gs inout())
 {
-    const int minimum_exp = 100;
-    *result += (float)(10 * next_level + minimum_exp);
-    return common_set_return(COMMON_OK, NULL, NULL);
-}
-
-common_return_t
-exp_progress_tracker(rpg_player_t *player inout())
-{
-
 #ifdef DEVELOPER_BUILD
-    if unlikely(player == NULL) {
-        return common_set_return(COMMON_ERROR,
-                                 "Failed at exp_progress_tracker because player "
-                                 "is NULL where it shouldn't...",
-                                 NULL);
-    }
+    assert(gs != NULL && "game state cannot be null");
 #endif
 
-    float max_exp = player->max_exp - player->previous_exp_requirement;
-    float current_exp = player->current_exp - player->previous_exp_requirement;
-    float result = 1 - (max_exp - current_exp) / max_exp;
-    if (result < 0.0f) result = 0.0f;
-    player->exp_percentage = result;
-    return common_set_return(COMMON_OK, NULL, NULL);
-}
+    common_set_defer();
 
-common_return_t
-rpg_game_logic_loop(rpg_game_state_t *gs inout())
-{
-
-#ifdef DEVELOPER_BUILD
-    if unlikely(gs == NULL) {
-        return common_set_return(COMMON_ERROR,
-                                 "Failed at rpg_game_logic_loop because "
-                                 "gamestate is NULL where it shouldn't...",
-                                 NULL);
-    }
-#endif
-
-    common_return_t error;
     using_rpg_player_t(gs, player);
 
-    player->current_exp += 1.0f;
+    mpf_t gain;
+    mpf_init(gain);
+    mpf_set_str(gain, "1.0", 10);
+
+    mpf_add(player->current_exp_adv, player->current_exp_adv, gain);
     if (player->upgrades.first_upgrade > 0) {
-        player->current_exp += player->upgrades.first_upgrade * 10.0f;
+        mpf_set_str(gain, "10.0", 10);
+        mpf_add(player->current_exp_adv, player->current_exp_adv, gain);
     }
 
     if (player->upgrades.second_upgrade > 0) {
-        player->current_exp += player->upgrades.second_upgrade * 30.0f;
+        mpf_set_str(gain, "30.0", 10);
+        mpf_add(player->current_exp_adv, player->current_exp_adv, gain);
     }
 
-    error = exp_progress_tracker(player);
-    if unlikely(common_get_error(error) != COMMON_OK) {
-        common_log(ERROR, "Failed to track exp progress...");
-        return error;
-    }
+    mpf_clear(gain);
 
-    if (player->exp_percentage >= 1.0f) {
-        common_clamp_min(player->exp_percentage, 1.0f);
-        error = next_exp_bump(player->current_level++, &player->previous_exp_requirement);
-        if unlikely(common_get_error(error) != COMMON_OK) {
-            common_log(ERROR, "Failed at bumping exp...");
-            return error;
-        }
-
-        error = next_exp_bump(player->current_level, &player->max_exp);
-        if unlikely(common_get_error(error) != COMMON_OK) {
-            common_log(ERROR, "Failed at bumping exp...");
-            return error;
-        }
-    }
-    return common_set_return(COMMON_OK, NULL, NULL);
+    common_return;
 }
 
 common_return_t
@@ -138,60 +100,45 @@ rpg_game_running(rpg_game_state_t *gs inout())
 {
 
 #ifdef DEVELOPER_BUILD
-    if unlikely(gs == NULL) {
-        return common_set_return(COMMON_ERROR,
-                                 "Failed at rpg_game_running because "
-                                 "gamestate is NULL where it shouldn't...",
-                                 NULL);
-    }
+    assert(gs != NULL && "game state cannot be null");
 #endif
+
+    common_set_defer();
 
     using_rpg_player_t(gs, player);
     using_rpg_ui_config_t(gs, ui_config);
     using_rpg_ui_state_t(gs, ui_state);
-    common_return_t error;
 
-    char exp[128];
-    char bought_str[128];
-
-    rl_set_target_fps(FRAME_RATE);
     rl_init_window(ui_config->screen_width, ui_config->screen_height,
                    "Infinitium RPG - Incremental Game");
     while (!rl_window_should_close()) {
         ui_state->mouse_position = rl_get_touch_position(0);
         ui_state->current_gesture = rl_get_gesture_detected();
 
-        // In game timer has passed
         gs->time_frame += rl_get_frame_time();
         if likely(gs->time_frame >= 1.0f) {
-            rpg_game_logic_loop(gs);
+            rpg_game_logic_step(gs);
+            rpg_player_update_display_info(player);
+            common_log(DEBUG, "Current player exp: %s", player->display_current_exp);
             gs->time_frame = 0.0f;
         }
 
-        // Drawing the game
         rl_begin_drawing();
         rl_clear_background(RAYWHITE);
-        sprintf(exp, "Current Exp: %.2f", player->current_exp);
-        sprintf(bought_str, "Upagrade 1: %d", player->upgrades.first_upgrade);
-        DrawText(exp, 100, 50, 24, DARKGRAY);
-        DrawText(bought_str, 500, 50, 24, LIGHTGRAY);
+        DrawText(player->display_current_exp, 100, 50, 24, DARKGRAY);
 
-        error = uic_button(ui_state->mouse_position, gs->ui_state.buttons[0], gs,
-                               &buy_upgrade_1, &on_change_upgrade_1);
-        if unlikely(common_get_error(error) != COMMON_OK) {
-            common_log(ERROR,
-                       "Failed to execute/render thee upgrade button number %d - reason: %s",
-                       gs->ui_state.buttons[0], common_get_error_msg(error));
+        unlikely_error(uic_button(gs, 0)) {
+             common_log(ERROR, ERROR_FMT,
+                        "execute/render the upgrade button", common_get_error_msg(error));
         }
 
-        error = uic_button(ui_state->mouse_position, gs->ui_state.buttons[1], gs,
-                               &buy_upgrade_2, &on_change_upgrade_2);
-        if unlikely(common_get_error(error) != COMMON_OK) {
-            common_log(ERROR,
-                       "Failed to execute/render thee upgrade button number %d - reason: %s",
-                       gs->ui_state.buttons[0], common_get_error_msg(error));
+        unlikely_error(uic_button(gs, 1)) {
+             common_log(ERROR, ERROR_FMT,
+                        "execute/render the upgrade button", common_get_error_msg(error));
         }
 
+        // TODO: Evaluate if this function call should be executed every game tick
+        rpg_player_update_display_info(player);
         rl_end_drawing();
     }
     rl_close_window();
@@ -205,12 +152,7 @@ rpg_game_deinit(rpg_game_state_t *gs inout())
 {
 
 #ifdef DEVELOPER_BUILD
-    if unlikely(gs == NULL) {
-        return common_set_return(COMMON_ERROR,
-                                 "Failed at rpg_game_deinit because "
-                                 "gamestate is NULL where it shouldn't...",
-                                 NULL);
-    }
+    assert(gs != NULL && "game state cannot be null");
 #endif
 
     (void)gs;
@@ -222,69 +164,61 @@ rpg_game_shutdown(rpg_game_state_t *gs inout())
 {
 
 #ifdef DEVELOPER_BUILD
-    if unlikely(gs == NULL) {
-        return common_set_return(COMMON_ERROR,
-                                 "Failed at rpg_game_shutdown because "
-                                 "gamestate is NULL where it shouldn't...",
-                                 NULL);
-    }
+    assert(gs != NULL && "game state cannot be null");
 #endif
 
     (void)gs;
     return common_set_return(COMMON_OK, NULL, NULL);
 }
 
-int
-main(void)
+common_return_t
+main_game(void)
 {
-    rpg_game_state_t gs;
-    common_return_t error;
+    common_set_defer();
+    rpg_game_state_t gs = {0};
 
     common_log(TRACE, "Setting up the game configuration");
-    error = rpg_game_setup(&gs);
-    if unlikely(common_get_error(error) != COMMON_OK) {
-        const char *error_reason =  common_get_error_msg(error);
-        common_log(ERROR, "Failed to setup the game - reason: %s", error_reason);
-        return -1;
+    unlikely_error(rpg_game_setup(&gs)) {
+        common_log(ERROR, ERROR_FMT, "setup the game", common_get_error_msg(error));
+        common_defer;
     }
     common_log(TRACE, "Successfully configured the game");
 
     common_log(TRACE, "Initializing the game configuration");
-    error = rpg_game_init(&gs);
-    if unlikely(common_get_error(error) != COMMON_OK) {
-        const char *error_reason = common_get_error_msg(error);
-        common_log(ERROR, "Failed to initialize the game - reason: %s", error_reason);
-        return -1;
+    unlikely_error(rpg_game_init(&gs)) {
+        common_log(ERROR, ERROR_FMT, "initialize the game", common_get_error_msg(error));
+        common_defer;
     }
     common_log(TRACE, "Successfully initialized the game");
 
     common_log(TRACE, "Running the game");
-    error = rpg_game_running(&gs);
-    if unlikely(common_get_error(error) != COMMON_OK) {
-        const char *error_reason = common_get_error_msg(error);
-        common_log(ERROR, "Failed to run the game - reason: %s", error_reason);
-        return -1;
+    unlikely_error(rpg_game_running(&gs)) {
+        common_log(ERROR, ERROR_FMT, "run the game", common_get_error_msg(error));
+        common_defer;
     }
     common_log(TRACE, "Successfully run the game");
 
     common_log(TRACE, "De-initializing the game");
-    error = rpg_game_deinit(&gs);
-    if unlikely(common_get_error(error) != COMMON_OK) {
-        const char *error_reason = common_get_error_msg(error);
-        common_log(ERROR, "Failed to de-initialize the game - reason: %s", error_reason);
-        return -1;
+    unlikely_error(rpg_game_deinit(&gs)) {
+        common_log(ERROR, ERROR_FMT, "de-initialize the game", common_get_error_msg(error));
+        common_defer;
     }
     common_log(TRACE, "Successfully de-initialized the game");
 
     common_log(TRACE, "Shuttingdown the game");
-    error = rpg_game_shutdown(&gs);
-    if unlikely(common_get_error(error) != COMMON_OK) {
-        const char *error_reason = common_get_error_msg(error);
-        common_log(ERROR, "Failed to shutdown the game - reason: %s", error_reason);
-        return -1;
+    unlikely_error(rpg_game_shutdown(&gs)) {
+        common_log(ERROR, ERROR_FMT, "shutdown the game", common_get_error_msg(error));
+        common_defer;
     }
     common_log(TRACE, "Successfully shutdown the game");
 
-    return 0;
+    common_return;
+}
+
+int
+main(void)
+{
+    common_return_t error = main_game();
+    return common_get_error(error) == COMMON_OK;
 }
 

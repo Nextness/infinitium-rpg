@@ -13,6 +13,8 @@
     #define unlikely(x) ((x))
 #endif
 
+#define unlikely_error(x) if unlikely(common_get_error(error = (x)) != COMMON_OK)
+
 #define common_clamp_min(value, min) \
 do {                                 \
     if ((value) < (min)) {           \
@@ -59,6 +61,13 @@ typedef struct {
 #define common_get_error(common_return_t) (common_return_t).res
 #define common_get_error_msg(common_return_t) (common_return_t).dev_error_msg
 #define common_get_user_error_msg(common_return_t) (common_return_t).user_error_msg
+#define common_set_defer() \
+    common_return_t error; \
+    common_return_t result = common_set_return(COMMON_OK, NULL, NULL)
+#define common_defer do {result = error; goto defer_label; } while (0)
+#define common_return defer_label: return result
+
+
 
 #define common_check_assert_error(common_return_t, failed_at)           \
 do {                                                                    \
