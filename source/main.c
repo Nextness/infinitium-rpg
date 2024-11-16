@@ -82,11 +82,19 @@ rpg_game_logic_step(rpg_game_state_t *gs inout())
     mpf_add(player->current_exp_adv, player->current_exp_adv, gain);
     if (player->upgrades.first_upgrade > 0) {
         mpf_set_str(gain, "10.0", 10);
+        mpf_mul_ui(gain, gain, player->upgrades.first_upgrade);
         mpf_add(player->current_exp_adv, player->current_exp_adv, gain);
     }
 
     if (player->upgrades.second_upgrade > 0) {
         mpf_set_str(gain, "30.0", 10);
+        mpf_mul_ui(gain, gain, player->upgrades.second_upgrade);
+        mpf_add(player->current_exp_adv, player->current_exp_adv, gain);
+    }
+
+    if (player->upgrades.third_upgrade > 0) {
+        mpf_set_str(gain, "100.0", 10);
+        mpf_mul_ui(gain, gain, player->upgrades.third_upgrade);
         mpf_add(player->current_exp_adv, player->current_exp_adv, gain);
     }
 
@@ -133,6 +141,11 @@ rpg_game_running(rpg_game_state_t *gs inout())
         }
 
         unlikely_error(uic_button(gs, 1)) {
+             common_log(ERROR, ERROR_FMT,
+                        "execute/render the upgrade button", common_get_error_msg(error));
+        }
+
+        unlikely_error(uic_button(gs, 2)) {
              common_log(ERROR, ERROR_FMT,
                         "execute/render the upgrade button", common_get_error_msg(error));
         }

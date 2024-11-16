@@ -9,6 +9,7 @@
 typedef struct {
     int first_upgrade;
     int second_upgrade;
+    int third_upgrade;
 } rpg_bought_upgrades_t;
 
 typedef struct {

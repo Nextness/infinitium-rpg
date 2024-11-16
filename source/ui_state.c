@@ -16,7 +16,7 @@ ui_state_init_config(rpg_ui_state_t *ui_state)
         .button_color = BLUE,
         .border_width = 4,
         .border_color = BLACK,
-        .button_text = "Hello World",
+        .button_text = "First Upgrade",
         .button_text_color = BLACK,
         .button_text_size = 16,
         .button_id = "upgd-1",
@@ -28,12 +28,24 @@ ui_state_init_config(rpg_ui_state_t *ui_state)
         .button_color = RED,
         .border_width = 4,
         .border_color = BLACK,
-        .button_text = "Hello World",
+        .button_text = "Second Upgrade",
         .button_text_color = BLACK,
         .button_text_size = 16,
         .button_id = "upgd-2",
         .on_change = on_change_upgrade_2_adv,
         .callback = buy_upgrade_2_adv,
+    };
+    ui_state->buttons[2] = (uic_button_config_t) {
+        .button_area = (rl_rectangle_t) {100, 300, 200, 50},
+        .button_color = RED,
+        .border_width = 4,
+        .border_color = BLACK,
+        .button_text = "Third Upgrade",
+        .button_text_color = BLACK,
+        .button_text_size = 16,
+        .button_id = "upgd-3",
+        .on_change = on_change_upgrade_3_adv,
+        .callback = buy_upgrade_3_adv,
     };
 
     return common_set_return(COMMON_OK, NULL, NULL);

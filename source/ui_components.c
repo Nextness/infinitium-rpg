@@ -51,10 +51,10 @@ render_button_l:
     rl_draw_rectangle_rounded(button_rect, 0.2f, 30, button->border_color);
     rl_draw_rectangle_rounded(button->button_area, 0.2f, 20, button->button_color);
     rl_draw_text(button->button_text,
-             button->button_area.x + (button->button_area.width - text_width) / 2,
-             button->button_area.y + button->button_area.height / 2,
-             button->button_text_size,
-             button->button_text_color);
+                 button->button_area.x + (button->button_area.width - text_width) / 2,
+                 button->button_area.y + button->button_area.height / 2,
+                 button->button_text_size,
+                 button->button_text_color);
 
     return common_set_return(COMMON_OK, NULL, NULL);
 }
