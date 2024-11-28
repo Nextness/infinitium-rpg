@@ -9,7 +9,6 @@
 
 typedef struct rpg_game_state_t {
     float time_frame;
-    rpg_ui_config_t ui_config;
     rpg_ui_state_t ui_state;
     rpg_player_t player;
 } rpg_game_state_t;

@@ -6,12 +6,16 @@
 typedef struct {
     int screen_width;
     int screen_height;
-} rpg_ui_config_t;
-
-#define using_rpg_ui_config_t(gs, ui_config) rpg_ui_config_t* (ui_config) = &(gs)->ui_config
+} ui_config_t;
 
 common_return_t
-ui_init_set_config(rpg_ui_config_t *ui_config inout());
+ui_init_set_config(ui_config_t *ui_config inout());
+
+
+// typedef struct {} 
+//  
+// ui_get_buttons();
+
 
 #endif // UI_CONFIG_H_
 

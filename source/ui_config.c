@@ -3,7 +3,7 @@
 #include <raylib.h>
 
 common_return_t
-ui_init_set_config(rpg_ui_config_t *ui_config inout())
+ui_init_set_config(ui_config_t *ui_config inout())
 {
     int display = GetCurrentMonitor();
     ui_config->screen_width = GetMonitorWidth(display);

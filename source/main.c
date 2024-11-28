@@ -20,6 +20,8 @@
 #define FRAME_RATE 60
 #define ERROR_FMT "Failed to %s - reason: %s"
 
+ui_config_t ui_config;
+
 common_return_t
 rpg_game_setup(rpg_game_state_t *gs inout())
 {
@@ -45,8 +47,7 @@ rpg_game_init(rpg_game_state_t *gs inout())
         common_log(DEBUG, "File doesn't exists - Success");
     }
 
-    using_rpg_ui_config_t(gs, ui_config);
-    unlikely_error(ui_init_set_config(ui_config)) {
+    unlikely_error(ui_init_set_config(&ui_config)) {
         common_log(ERROR, ERROR_FMT, "initialize the UI config", common_get_error_msg(error));
         goto label_return;
     }
@@ -122,10 +123,9 @@ rpg_game_running(rpg_game_state_t *gs inout())
     common_return_t error = common_set_return(COMMON_OK, NULL, NULL);
 
     using_rpg_player_t(gs, player);
-    using_rpg_ui_config_t(gs, ui_config);
     using_rpg_ui_state_t(gs, ui_state);
 
-    rl_init_window(ui_config->screen_width, ui_config->screen_height,
+    rl_init_window(ui_config.screen_width, ui_config.screen_height,
                    "Infinitium RPG - Incremental Game");
     while (!rl_window_should_close()) {
         ui_state->mouse_position = rl_get_touch_position(0);
