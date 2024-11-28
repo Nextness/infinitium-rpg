@@ -18,7 +18,6 @@
 #include "wrapper.h"
 
 #define FRAME_RATE 60
-#define MAX_BUILDINGS 100
 #define ERROR_FMT "Failed to %s - reason: %s"
 
 common_return_t
